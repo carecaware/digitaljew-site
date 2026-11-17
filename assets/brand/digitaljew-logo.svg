@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 190" role="img" aria-labelledby="title desc">
+<title id="title">DigitalJew Software</title><desc id="desc">Circuito integrado com menorá dourada e nome DigitalJew Software.</desc>
+<rect width="720" height="190" fill="none"/>
+<g stroke="#58c0d0" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="26" y="43" width="142" height="112" rx="9"/><path d="M70 43V18m-11 0a11 11 0 1 0 22 0m24 25V18m-11 0a11 11 0 1 0 22 0m24 25V18m-11 0a11 11 0 1 0 22 0M26 75H7m0 0a8 8 0 1 0 0 16m161-16h19m0 0a8 8 0 1 1 0 16M26 122H7m0 0a8 8 0 1 0 0 16m161-16h19m0 0a8 8 0 1 1 0 16M70 155v20m0 0a8 8 0 1 0 16 0m25-20v20m0 0a8 8 0 1 0 16 0m25-20v20m0 0a8 8 0 1 0 16 0"/>
+</g>
+<g fill="none" stroke="#f8c058" stroke-width="5" stroke-linecap="round"><path d="M97 126V83m0 43c-23 0-39-15-39-36m39 36c23 0 39-15 39-36M97 111c-17 0-28-11-28-25m28 25c17 0 28-11 28-25M97 95c-10 0-16-7-16-16m16 16c10 0 16-7 16-16M83 126h28"/></g>
+<g fill="#f8c058"><circle cx="58" cy="86" r="5"/><circle cx="69" cy="73" r="5"/><circle cx="81" cy="67" r="5"/><circle cx="97" cy="62" r="5"/><circle cx="113" cy="67" r="5"/><circle cx="125" cy="73" r="5"/><circle cx="136" cy="86" r="5"/></g>
+<text x="205" y="111" fill="#f8f8f8" font-family="Manrope,Arial,sans-serif" font-size="70" font-weight="400" letter-spacing="-3">Digital</text><text x="420" y="111" fill="#58c0d0" font-family="Manrope,Arial,sans-serif" font-size="70" font-weight="800" letter-spacing="-4">Jew</text><text x="345" y="157" fill="#f8f8f8" font-family="Arial,sans-serif" font-size="27" letter-spacing="12">SOFTWARE</text>
+</svg>
