@@ -6,7 +6,9 @@
   const TTL_MS = (cfg.codeTtlMinutes || 10) * 60 * 1000;
   const COOLDOWN_S = cfg.resendCooldownSeconds || 60;
   const $ = id => document.getElementById(id);
-  const AREA = 'area.html';
+  // Para onde ir depois de entrar: Downloads, quando a pessoa veio para baixar o app.
+  try { if (new URLSearchParams(location.search).get('voltar') === 'downloads') sessionStorage.setItem('dj_voltar', 'downloads'); } catch {}
+  const destino = () => { let v = null; try { v = sessionStorage.getItem('dj_voltar'); sessionStorage.removeItem('dj_voltar'); } catch {} return 'area.html' + (v === 'downloads' ? '#downloads' : ''); };
 
   // Estado: modo "cadastro" (conta nova) ou "entrar" (conta existente)
   const st = { modo: 'cadastro', dados: null, expiraEm: 0, esperaAte: 0, timer: null };
@@ -178,7 +180,7 @@
   /* Já logado: quem tem cadastro vai para a área; quem não tem completa os dados. */
   async function seguirLogado(user) {
     const { data: cli } = await sb.from('clientes').select('nome').eq('id', user.id).maybeSingle();
-    if (cli) return location.replace(AREA);
+    if (cli) return location.replace(destino());
     const f = $('form-completar'), m = user.user_metadata || {};
     f.nome.value = m.full_name || m.name || m.nome || '';
     f.email.value = user.email || m.email || '';

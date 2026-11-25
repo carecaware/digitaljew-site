@@ -50,3 +50,11 @@ Abre só para quem está logado (quem não está vai para `cadastro.html#entrar`
   - **Valor mensal:** preencha `precos` em `config.js` para aparecer nos cartões.
 - **Dados de pagamento:** painel branco que desliza da direita, com número do cartão (detecta a bandeira), nome impresso, validade, CVV, CPF do titular e autorização de cobrança mensal. Os campos já são conferidos, mas **nada é salvo nem enviado** até a integração com a operadora. O ponto de ligação é a função `salvarCartao` em `area.js` (ative com `payments: { ready: true, salvarCartao }` em `config.js`). Nunca guarde número completo ou CVV no Supabase: use a tokenização da operadora.
 - **Meus dados:** o cliente edita nome e WhatsApp.
+
+## Downloads e chave de teste (área do cliente → Downloads)
+Para baixar o app é preciso ter conta. Os botões "Baixar" do site levam para `area.html#downloads`; quem não está logado vai para o cadastro e volta direto para os Downloads.
+
+- **Instaladores:** ficam na pasta **privada** `instaladores` do Supabase Storage, com as subpastas `windows` (.exe/.msi) e `android` (.apk). A área do cliente oferece sempre o arquivo **mais novo** de cada subpasta, por um link temporário de 5 minutos. Para publicar uma versão: *Storage → instaladores → windows* (ou *android*) → *Upload file*.
+- **Chave:** cada conta recebe **uma** chave de teste de 7 dias por plataforma (Windows e Android), criada automaticamente na primeira vez que a pessoa baixa ou clica em "Gerar minha chave". Se o cliente já tiver uma chave paga ligada ao e-mail, é ela que aparece. Uma conta que já teve teste numa plataforma não ganha outro.
+- **Um teste por aparelho:** garantido na ativação pelo app (`migration-008.sql` e a função `validate-license` do repositório do app). Mesmo criando várias contas, o mesmo computador não ativa um segundo teste.
+- **Configuração, nesta ordem:** `clientes.sql` → `licencas-cliente.sql` → `migration-008.sql` (repositório do app) → `downloads-e-chaves.sql`. Depois, implante de novo a função `validate-license`.

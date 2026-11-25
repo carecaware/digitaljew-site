@@ -67,6 +67,85 @@
     $('sem-assinatura').hidden = lista.length > 0;
   }
 
+  /* ---------- downloads: instaladores (pasta privada) e chave de cada plataforma ---------- */
+  const BUCKET = cfg.downloadsBucket || 'instaladores';
+  const PASTAS = { windows: { pasta: 'windows', ext: /\.(exe|msi)$/i, nome: 'Windows' }, mobile: { pasta: 'android', ext: /\.apk$/i, nome: 'Android' } };
+  const tamanho = n => n ? (n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1).replace('.', ',')} MB`) : '';
+  const instalador = {};
+
+  async function maisNovo(plat) {
+    const P = PASTAS[plat];
+    const { data, error } = await sb.storage.from(BUCKET).list(P.pasta, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+    if (error) throw error;
+    return (data || []).filter(f => P.ext.test(f.name)).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0] || null;
+  }
+
+  function mostrarChave(card, r) {
+    const box = card.querySelector('[data-chave-box]'), nome = PASTAS[card.dataset.plataforma].nome;
+    if (r.erro === 'teste_ja_usado') {
+      box.innerHTML = `<p class="dl-key-label">Chave para ${nome}</p><p class="dl-key-info">Você já usou o período de teste gratuito no ${nome}. Para continuar, fale com a gente e assine o BarFácil.</p>`;
+      return;
+    }
+    if (r.erro) { box.innerHTML = `<p class="dl-key-info err">Não foi possível carregar sua chave agora. Recarregue a página em instantes.</p>`; return; }
+    if (!r.chave) {
+      box.innerHTML = `<p class="dl-key-label">Chave para ${nome}</p><p class="dl-key-info">Você ainda não tem uma chave para ${nome}.</p><button type="button" class="link-button" data-gerar>Gerar minha chave de teste grátis (7 dias)</button>`;
+      box.querySelector('[data-gerar]').addEventListener('click', e => pegarChave(card, true, e.currentTarget));
+      return;
+    }
+    const tipo = r.teste ? 'Chave de teste · 7 dias a partir da 1ª ativação' : `Plano ${{ basica: 'Básico', premium: 'Premium' }[r.plano] || r.plano}`;
+    box.innerHTML = `<p class="dl-key-label">Sua chave para ${nome}</p>
+      <div class="dl-key-row"><code>${esc(r.chave)}</code><button type="button" class="dl-copy" data-copiar>Copiar</button></div>
+      <p class="dl-key-info">${esc(tipo)}</p>`;
+    box.querySelector('[data-copiar]').addEventListener('click', async e => {
+      const b = e.currentTarget;
+      try { await navigator.clipboard.writeText(r.chave); b.textContent = 'Copiada!'; }
+      catch { const t = document.createElement('textarea'); t.value = r.chave; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); b.textContent = 'Copiada!'; }
+      setTimeout(() => { b.textContent = 'Copiar'; }, 2000);
+    });
+  }
+
+  async function pegarChave(card, criar, btn) {
+    if (btn) busy(btn, true, 'Gerando…');
+    const { data, error } = await sb.rpc('minha_chave', { p_plataforma: card.dataset.plataforma, p_criar: criar });
+    if (btn) busy(btn, false);
+    const r = error ? { erro: /teste_ja_usado/.test(error.message || '') ? 'teste_ja_usado' : 'falha' } : ((data && data[0]) || {});
+    if (error && r.erro === 'falha') console.error(error);
+    mostrarChave(card, r);
+    if (criar && r.chave && r.criada_agora) carregarAssinaturas();
+    return r;
+  }
+
+  async function carregarDownloads() {
+    document.querySelectorAll('.dl-card').forEach(async card => {
+      const plat = card.dataset.plataforma, arq = card.querySelector('[data-arquivo]'), btn = card.querySelector('[data-baixar]');
+      pegarChave(card, false);
+      try {
+        const f = await maisNovo(plat);
+        instalador[plat] = f;
+        if (!f) { arq.textContent = 'Versão ainda não disponível. Volte em breve.'; return; }
+        const data = f.created_at ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(f.created_at)) : '';
+        arq.textContent = [f.name, tamanho(f.metadata && f.metadata.size), data].filter(Boolean).join(' · ');
+        btn.disabled = false;
+      } catch (e) { console.error(e); arq.textContent = 'Não foi possível consultar os arquivos agora.'; }
+    });
+  }
+
+  document.querySelectorAll('.dl-card [data-baixar]').forEach(btn => btn.addEventListener('click', async () => {
+    const card = btn.closest('.dl-card'), plat = card.dataset.plataforma, f = instalador[plat];
+    if (!f) return;
+    busy(btn, true, 'Preparando o download…');
+    try {
+      // garante a chave de teste para quem ainda não tem (uma por conta e por plataforma)
+      await pegarChave(card, true);
+      const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(`${PASTAS[plat].pasta}/${f.name}`, 300, { download: f.name });
+      if (error) throw error;
+      location.href = data.signedUrl;
+    } catch (e) {
+      console.error(e);
+      card.querySelector('[data-arquivo]').textContent = 'Não foi possível iniciar o download. Tente de novo.';
+    } finally { setTimeout(() => busy(btn, false), 1500); }
+  }));
+
   /* ---------- meus dados ---------- */
   async function carregarPerfil() {
     const { data } = await sb.from('clientes').select('nome, email, whatsapp').eq('id', user.id).maybeSingle();
@@ -235,15 +314,20 @@
   async function iniciar() {
     if (!sb) { $('area-carregando').textContent = 'A área do cliente ainda não está configurada neste site.'; return; }
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) return location.replace(ENTRAR);
+    if (!session) {
+      // quem veio para baixar o app e ainda não tem conta vai para o cadastro (e volta para os Downloads)
+      if (location.hash === '#downloads') return location.replace('cadastro.html?voltar=downloads');
+      return location.replace(ENTRAR);
+    }
     user = session.user;
     sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' && !saindo) location.replace(ENTRAR); });
     const temCadastro = await carregarPerfil();
-    if (!temCadastro) return location.replace('cadastro.html'); // logou mas não completou o cadastro
+    if (!temCadastro) return location.replace('cadastro.html' + (location.hash === '#downloads' ? '?voltar=downloads' : '')); // logou mas não completou o cadastro
     $('area-carregando').hidden = true;
     $('area-conteudo').hidden = false;
     rota();
     carregarAssinaturas();
+    carregarDownloads();
   }
   iniciar();
 })();

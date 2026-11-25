@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="topbar" id="topo"><a class="brand" href="index.html#inicio"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button><nav class="nav"><a href="index.html#produto">Produto</a><a href="index.html#downloads">Downloads</a><a href="index.html#novidades">Novidades</a><a href="index.html#sobre">Sobre</a><a href="area.html" aria-current="page">Área do cliente</a></nav><a class="nav-cta" href="index.html#downloads">Baixar BarFácil ↗</a></header>
+<header class="topbar" id="topo"><a class="brand" href="index.html#inicio"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button><nav class="nav"><a href="index.html#produto">Produto</a><a href="index.html#downloads">Downloads</a><a href="index.html#novidades">Novidades</a><a href="index.html#sobre">Sobre</a><a href="area.html" aria-current="page">Área do cliente</a></nav><a class="nav-cta" href="area.html#downloads">Baixar BarFácil ↗</a></header>
 
 <main class="area section">
   <p class="area-loading" id="area-carregando">Carregando sua área…</p>
@@ -24,6 +24,7 @@
       </div>
       <nav class="area-nav" aria-label="Menu da área do cliente">
         <a href="#assinatura" data-view="assinatura">Assinatura</a>
+        <a href="#downloads" data-view="downloads">Downloads</a>
         <a href="#pagamento" data-abrir-pagamento>Dados de pagamento</a>
         <a href="#meus-dados" data-view="meus-dados">Meus dados</a>
         <button type="button" id="sair">Sair</button>
@@ -39,15 +40,46 @@
         <div class="empty-box" id="sem-assinatura" hidden>
           <h3>Não encontramos licenças do BarFácil na sua conta.</h3>
           <p>Elas aparecem aqui quando a licença está ligada ao seu e-mail. Se você já tem uma chave, fale com a gente para ligá-la à sua conta. Se ainda não tem, baixe o app e comece pelo período de teste.</p>
-          <a class="button primary" href="index.html#downloads">Baixar o BarFácil ↓</a>
+          <a class="button primary" href="#downloads">Baixar o BarFácil ↓</a>
         </div>
         <p class="form-error" id="erro-assinatura" role="alert" hidden></p>
         <a class="area-pay-link" href="#pagamento" data-abrir-pagamento>Dados de pagamento <span aria-hidden="true">→</span></a>
       </section>
 
+      <!-- Downloads -->
+      <section class="area-view" data-view="downloads" hidden>
+        <div class="kicker">02 / DOWNLOADS</div>
+        <h1>Baixar o BarFácil</h1>
+        <p class="area-lead">Baixe, instale e ative com a sua chave. A chave de teste libera <strong>7 dias grátis</strong>, contados a partir da primeira ativação. Cada computador ou celular pode usar o período de teste uma única vez.</p>
+        <div class="dl-grid">
+          <article class="dl-card" data-plataforma="windows">
+            <div class="dl-head">
+              <svg class="dl-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.1 10.4 4v7.1H3zm8.3-1.2L21 2.5v8.6h-9.7zM3 12.1h7.4v7.1L3 18.1zm8.3 0H21v8.6l-9.7-1.4z"/></svg>
+              <div><h2>Windows</h2><p class="dl-file" data-arquivo>Procurando a versão mais recente…</p></div>
+            </div>
+            <button type="button" class="button primary wide" data-baixar disabled>Baixar para Windows</button>
+            <div class="dl-key" data-chave-box></div>
+          </article>
+          <article class="dl-card" data-plataforma="mobile">
+            <div class="dl-head">
+              <svg class="dl-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7.2 3.4 8.4 5.5A7.6 7.6 0 0 0 4.5 11h15a7.6 7.6 0 0 0-3.9-5.5l1.2-2.1a.4.4 0 0 0-.7-.4l-1.2 2.1a8 8 0 0 0-5.8 0L7.9 3a.4.4 0 0 0-.7.4zM8.5 8.3a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6zm7 0a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6zM4.5 12h15v7a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19z"/></svg>
+              <div><h2>Android</h2><p class="dl-file" data-arquivo>Procurando a versão mais recente…</p></div>
+            </div>
+            <button type="button" class="button primary wide" data-baixar disabled>Baixar para Android</button>
+            <div class="dl-key" data-chave-box></div>
+            <p class="dl-note">No celular, permita a instalação de apps desta fonte quando o Android pedir.</p>
+          </article>
+        </div>
+        <ol class="dl-steps">
+          <li><b>Baixe e instale</b> o BarFácil no computador ou no celular do caixa.</li>
+          <li><b>Abra o app</b> e cole a sua chave na tela de ativação.</li>
+          <li><b>Pronto.</b> Quando quiser continuar depois do teste, é só assinar: a mesma chave passa a valer para o plano escolhido.</li>
+        </ol>
+      </section>
+
       <!-- Meus dados -->
       <section class="area-view" data-view="meus-dados" hidden>
-        <div class="kicker">02 / MEUS DADOS</div>
+        <div class="kicker">03 / MEUS DADOS</div>
         <h1>Meus dados</h1>
         <form id="form-perfil" class="area-form" novalidate>
           <label class="field"><span>Nome completo</span><input name="nome" autocomplete="name" required></label>
