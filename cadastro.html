@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#182838">
+<meta name="description" content="Crie sua conta na DigitalJew Software.">
+<title>Cadastro · DigitalJew Software</title>
+<link rel="icon" type="image/jpeg" href="assets/brand/digitaljew-logo.jpg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar" id="topo"><a class="brand" href="index.html#inicio"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button><nav class="nav"><a href="index.html#produto">Produto</a><a href="index.html#downloads">Downloads</a><a href="index.html#novidades">Novidades</a><a href="index.html#sobre">Sobre</a><a href="cadastro.html" aria-current="page">Área do cliente</a></nav><a class="nav-cta" href="index.html#downloads">Baixar BarFácil ↗</a></header>
+
+<main class="signup section">
+  <div class="signup-intro">
+    <div class="kicker">ÁREA DO CLIENTE</div>
+    <h1>Crie sua conta.<br><span>Leva um minuto.</span></h1>
+    <p>Com o cadastro você recebe novidades do BarFácil, acompanha suas licenças e fala com a gente mais rápido.</p>
+  </div>
+
+  <div class="signup-card">
+    <!-- Passo 1: dados -->
+    <section class="step" data-step="dados">
+      <h2>Cadastro</h2>
+      <button type="button" class="google-button" id="google-button">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+        Continuar com Google
+      </button>
+      <div class="divider"><span>ou cadastre-se com seus dados</span></div>
+      <form id="form-dados" novalidate>
+        <label class="field"><span>Nome completo</span><input name="nome" autocomplete="name" required></label>
+        <label class="field"><span>E-mail</span><input name="email" type="email" autocomplete="email" required></label>
+        <label class="field"><span>WhatsApp</span><input name="whatsapp" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(11) 98765-4321" required></label>
+        <label class="field"><span>Onde ouviu falar de nós?</span>
+          <select name="origem" required>
+            <option value="">Selecione</option>
+            <option>Instagram</option><option>Facebook</option><option>TikTok</option><option>YouTube</option>
+            <option>Pesquisa no Google</option><option>Indicação de amigo ou conhecido</option><option>Outro</option>
+          </select>
+        </label>
+        <label class="field" id="origem-outro" hidden><span>Conte pra gente onde</span><input name="origem_outro"></label>
+        <p class="form-error" id="erro-dados" role="alert" hidden></p>
+        <button class="button primary wide" type="submit">Cadastrar</button>
+      </form>
+    </section>
+
+    <!-- Passo 2: onde receber o código -->
+    <section class="step" data-step="canal" hidden>
+      <h2>Onde você quer receber o código de confirmação?</h2>
+      <div class="channels">
+        <button type="button" class="channel" data-canal="email"><b>E-mail</b><span id="canal-email-destino"></span></button>
+        <button type="button" class="channel" data-canal="whatsapp"><b>WhatsApp</b><span id="canal-whats-destino"></span></button>
+      </div>
+      <p class="form-error" id="erro-canal" role="alert" hidden></p>
+      <button type="button" class="link-button" data-voltar="dados">← Corrigir meus dados</button>
+    </section>
+
+    <!-- Passo 3: código -->
+    <section class="step" data-step="codigo" hidden>
+      <h2>Digite o código</h2>
+      <p class="step-text" id="codigo-texto"></p>
+      <form id="form-codigo" novalidate>
+        <label class="field"><span>Código de confirmação</span><input name="codigo" id="campo-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="10" aria-describedby="erro-codigo"></label>
+        <p class="field-error" id="erro-codigo" role="alert" hidden></p>
+        <button class="button primary wide" type="submit">Prosseguir</button>
+      </form>
+      <p class="resend"><button type="button" class="link-button" id="reenviar">Não recebeu o código? Clique aqui para enviar de novo</button><span id="reenviar-espera" hidden></span></p>
+      <button type="button" class="link-button muted" data-voltar="canal">Trocar a forma de envio</button>
+    </section>
+
+    <!-- Passo extra: completar cadastro de quem entrou com Google -->
+    <section class="step" data-step="completar" hidden>
+      <h2>Só mais um passo</h2>
+      <p class="step-text">Você entrou com o Google. Complete o cadastro com os dados abaixo.</p>
+      <form id="form-completar" novalidate>
+        <label class="field"><span>Nome completo</span><input name="nome" autocomplete="name" required></label>
+        <label class="field"><span>E-mail</span><input name="email" type="email" readonly></label>
+        <label class="field"><span>WhatsApp</span><input name="whatsapp" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(11) 98765-4321" required></label>
+        <label class="field"><span>Onde ouviu falar de nós?</span>
+          <select name="origem" required>
+            <option value="">Selecione</option>
+            <option>Instagram</option><option>Facebook</option><option>TikTok</option><option>YouTube</option>
+            <option>Pesquisa no Google</option><option>Indicação de amigo ou conhecido</option><option>Outro</option>
+          </select>
+        </label>
+        <label class="field" hidden><span>Conte pra gente onde</span><input name="origem_outro"></label>
+        <p class="form-error" id="erro-completar" role="alert" hidden></p>
+        <button class="button primary wide" type="submit">Concluir cadastro</button>
+      </form>
+    </section>
+
+    <!-- Passo final -->
+    <section class="step done" data-step="pronto" hidden>
+      <div class="done-mark" aria-hidden="true">✳</div>
+      <h2>Cadastro concluído!</h2>
+      <p class="step-text" id="pronto-texto">Tudo certo. Bem-vindo à DigitalJew.</p>
+      <a class="button primary" href="index.html#inicio">Voltar ao início</a>
+      <button type="button" class="link-button muted" id="sair">Sair desta conta</button>
+    </section>
+  </div>
+</main>
+
+<footer class="footer"><a href="index.html#inicio" class="footer-brand"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><div class="footer-copy"><span>SOFTWARE COM PROPÓSITO.</span><span>© <span id="year"></span> DIGITALJEW SOFTWARE</span></div><a class="back-top" href="#topo">VOLTAR AO TOPO ↑</a></footer>
+<script src="config.js"></script>
+<script src="vendor/supabase-js-2.117.3.min.js"></script>
+<script src="cadastro.js"></script>
+</body>
+</html>
