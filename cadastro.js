@@ -1,44 +1,20 @@
-/* Página de cadastro do cliente.
+/* Página de cadastro e de entrada do cliente.
  * Código de confirmação por e-mail e login com Google, feitos pelo Supabase Auth.
- * Configuração (URL, chave pública, validade do código) em config.js. */
+ * Configuração (URL, chave pública, validade do código) em config.js; base em conta.js. */
 (() => {
-  const cfg = window.DIGITALJEW_CONFIG || {};
+  const { cfg, sb, digits, maskPhone, phoneE164, validPhone, validEmail, hideEmail, msg, busy } = window.DJ;
   const TTL_MS = (cfg.codeTtlMinutes || 10) * 60 * 1000;
   const COOLDOWN_S = cfg.resendCooldownSeconds || 60;
   const $ = id => document.getElementById(id);
+  const AREA = 'area.html';
 
-  const sb = window.supabase && cfg.supabaseUrl && cfg.supabaseKey
-    ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true } })
-    : null;
-
-  // Estado do cadastro em andamento
-  const st = { dados: null, expiraEm: 0, esperaAte: 0, timer: null };
-
-  /* ---------- utilidades ---------- */
-  const digits = v => String(v || '').replace(/\D/g, '');
-  function nationalDigits(v) { let d = digits(v); if (d.length > 11 && d.startsWith('55')) d = d.slice(2); return d; }
-  function maskPhone(v) {
-    const d = nationalDigits(v).slice(0, 11);
-    if (d.length <= 2) return d ? '(' + d : '';
-    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  }
-  const phoneE164 = v => '+55' + nationalDigits(v);
-  const validPhone = v => /^[1-9]{2}9?\d{8}$/.test(nationalDigits(v));
-  const validEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v).trim());
-  function hideEmail(e) { const [u, d] = e.split('@'); return (u.length <= 2 ? u[0] + '*' : u.slice(0, 2) + '•••') + '@' + d; }
+  // Estado: modo "cadastro" (conta nova) ou "entrar" (conta existente)
+  const st = { modo: 'cadastro', dados: null, expiraEm: 0, esperaAte: 0, timer: null };
 
   function show(step) {
     document.querySelectorAll('.step').forEach(s => { s.hidden = s.dataset.step !== step; });
-    const first = document.querySelector(`.step[data-step="${step}"] input:not([readonly]), .step[data-step="${step}"] button`);
+    const first = document.querySelector(`.step[data-step="${step}"] input:not([readonly])`);
     if (first && step !== 'dados') first.focus({ preventScroll: true });
-  }
-  function msg(el, text) { el.textContent = text || ''; el.hidden = !text; }
-  function busy(btn, on, label) {
-    if (!btn) return;
-    if (on) { btn.dataset.label = btn.textContent; btn.textContent = label || 'Aguarde…'; btn.disabled = true; }
-    else { btn.textContent = btn.dataset.label || btn.textContent; btn.disabled = false; }
   }
   function origemDe(form) {
     const o = form.origem.value;
@@ -47,6 +23,8 @@
   function sendError(err) {
     const code = err && (err.code || ''), status = err && err.status;
     if (status === 429 || /rate_limit/.test(code)) return 'Muitos pedidos de código seguidos. Aguarde um minuto e tente de novo.';
+    if (/otp_disabled|signup_disabled|user_not_found/.test(code) || /signups not allowed/i.test(err && err.message || ''))
+      return 'Não encontramos uma conta com este e-mail. Confira o endereço ou cadastre-se.';
     if (/email_provider_disabled|email_address_invalid/.test(code)) return 'Não conseguimos enviar para este e-mail. Confira o endereço e tente de novo.';
     return 'Não foi possível enviar o código agora. Tente de novo em instantes.';
   }
@@ -59,6 +37,15 @@
     sel.addEventListener('change', () => { extra.hidden = sel.value !== 'Outro'; });
   });
 
+  /* ---------- alternar entre cadastro e entrar ---------- */
+  document.querySelectorAll('[data-ir]').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    st.modo = a.dataset.ir === 'entrar' ? 'entrar' : 'cadastro';
+    history.replaceState(null, '', a.dataset.ir === 'entrar' ? '#entrar' : location.pathname);
+    show(a.dataset.ir);
+  }));
+  $('voltar-codigo').addEventListener('click', () => show(st.modo === 'entrar' ? 'entrar' : 'dados'));
+
   /* ---------- passo 1: dados ---------- */
   function validar(form, errEl) {
     const nome = form.nome.value.trim(), email = form.email.value.trim(), whats = form.whatsapp.value;
@@ -70,28 +57,22 @@
     return { nome, email: email.toLowerCase(), whatsapp: phoneE164(whats), origem: origemDe(form) };
   }
 
-  document.querySelectorAll('[data-voltar]').forEach(b => b.addEventListener('click', () => show(b.dataset.voltar)));
-
   /* ---------- enviar o código por e-mail ---------- */
   async function enviarCodigo() {
     if (!sb) throw { code: 'not_configured' };
-    const meta = { nome: st.dados.nome, email: st.dados.email, whatsapp: st.dados.whatsapp, origem: st.dados.origem };
-    const r = await sb.auth.signInWithOtp({ email: st.dados.email, options: { shouldCreateUser: true, data: meta } });
+    const opts = st.modo === 'entrar'
+      ? { shouldCreateUser: false }
+      : { shouldCreateUser: true, data: { nome: st.dados.nome, email: st.dados.email, whatsapp: st.dados.whatsapp, origem: st.dados.origem } };
+    const r = await sb.auth.signInWithOtp({ email: st.dados.email, options: opts });
     if (r.error) throw r.error;
     st.expiraEm = Date.now() + TTL_MS;
     iniciarEspera();
   }
   const textoEnvio = novo => `Enviamos um${novo ? ' novo' : ''} código para o e-mail ${hideEmail(st.dados.email)}. Ele vale por ${cfg.codeTtlMinutes || 10} minutos.`;
 
-  $('form-dados').addEventListener('submit', async e => {
-    e.preventDefault();
-    const err = $('erro-dados');
-    const dados = validar(e.target, err);
-    if (!dados) return;
-    if (!sb) return notConfigured(err);
-    st.dados = dados;
-    const btn = e.target.querySelector('button[type="submit"]');
-    busy(btn, true, 'Enviando código…');
+  async function pedirCodigo(form, errEl, label) {
+    const btn = form.querySelector('button[type="submit"]');
+    busy(btn, true, label);
     try {
       await enviarCodigo();
       $('codigo-texto').textContent = textoEnvio(false);
@@ -99,8 +80,28 @@
       erroCodigo('');
       show('codigo');
     } catch (e2) {
-      msg(err, e2 && e2.code === 'not_configured' ? '' : sendError(e2));
+      msg(errEl, e2 && e2.code === 'not_configured' ? '' : sendError(e2));
     } finally { busy(btn, false); }
+  }
+
+  $('form-dados').addEventListener('submit', e => {
+    e.preventDefault();
+    const err = $('erro-dados');
+    const dados = validar(e.target, err);
+    if (!dados) return;
+    if (!sb) return notConfigured(err);
+    st.modo = 'cadastro'; st.dados = dados;
+    pedirCodigo(e.target, err, 'Enviando código…');
+  });
+
+  $('form-entrar').addEventListener('submit', e => {
+    e.preventDefault();
+    const err = $('erro-entrar'), email = e.target.email.value.trim();
+    if (!validEmail(email)) return msg(err, 'Digite um e-mail válido.'), e.target.email.focus();
+    if (!sb) return notConfigured(err);
+    msg(err, '');
+    st.modo = 'entrar'; st.dados = { email: email.toLowerCase() };
+    pedirCodigo(e.target, err, 'Enviando código…');
   });
 
   /* ---------- passo 2: código ---------- */
@@ -125,6 +126,7 @@
         return erroCodigo('Código incorreto. Confira os números e tente de novo.');
       }
       erroCodigo('');
+      if (st.modo === 'entrar') return seguirLogado(r.data.user);
       await salvarCliente(r.data.user, { ...st.dados, metodo: 'email' });
       concluir(st.dados.nome);
     } catch (e2) {
@@ -173,16 +175,29 @@
     show('pronto');
   }
 
+  /* Já logado: quem tem cadastro vai para a área; quem não tem completa os dados. */
+  async function seguirLogado(user) {
+    const { data: cli } = await sb.from('clientes').select('nome').eq('id', user.id).maybeSingle();
+    if (cli) return location.replace(AREA);
+    const f = $('form-completar'), m = user.user_metadata || {};
+    f.nome.value = m.full_name || m.name || m.nome || '';
+    f.email.value = user.email || m.email || '';
+    if (m.whatsapp) f.whatsapp.value = maskPhone(m.whatsapp);
+    $('completar-texto').textContent = (user.app_metadata || {}).provider === 'google'
+      ? 'Você entrou com o Google. Complete o cadastro com os dados abaixo.'
+      : 'Complete o cadastro com os dados abaixo.';
+    show('completar');
+  }
+
   /* ---------- Google ---------- */
-  $('google-button').addEventListener('click', async () => {
-    const err = $('erro-dados');
+  document.querySelectorAll('.google-button').forEach(btn => btn.addEventListener('click', async () => {
+    const err = btn.closest('.step').querySelector('.form-error');
     if (!sb) return notConfigured(err);
-    const btn = $('google-button');
     busy(btn, true, 'Abrindo o Google…');
     const redirectTo = location.href.split('#')[0].split('?')[0];
     const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
     if (error) { busy(btn, false); msg(err, 'Não foi possível abrir o login do Google agora. Tente de novo.'); }
-  });
+  }));
 
   $('form-completar').addEventListener('submit', async e => {
     e.preventDefault();
@@ -193,38 +208,21 @@
     busy(btn, true, 'Salvando…');
     try {
       const { data } = await sb.auth.getUser();
-      await salvarCliente(data.user, { ...d, metodo: 'google' });
+      await salvarCliente(data.user, { ...d, metodo: (data.user.app_metadata || {}).provider === 'google' ? 'google' : 'email' });
       concluir(d.nome);
     } catch { msg(errEl, 'Não conseguimos salvar seu cadastro. Tente de novo.'); }
     finally { busy(btn, false); }
   });
 
-  $('sair').addEventListener('click', async () => {
-    if (sb) await sb.auth.signOut();
-    $('form-dados').reset();
-    show('dados');
-  });
-
   /* ---------- ao abrir a página (inclui a volta do Google) ---------- */
   async function iniciar() {
+    if (location.hash === '#entrar') { st.modo = 'entrar'; show('entrar'); }
     if (!sb) return;
     const q = new URLSearchParams(location.search + '&' + location.hash.slice(1));
     if (q.get('error_description')) msg($('erro-dados'), 'O login com Google foi cancelado ou falhou. Tente de novo.');
     const { data: { session } } = await sb.auth.getSession();
     if (q.has('code') || q.has('access_token')) history.replaceState(null, '', location.pathname);
-    if (!session) return;
-    const user = session.user;
-    const { data: cli } = await sb.from('clientes').select('nome').eq('id', user.id).maybeSingle();
-    if (cli) return concluir(cli.nome || '');
-    const f = $('form-completar'), m = user.user_metadata || {};
-    f.nome.value = m.full_name || m.name || m.nome || '';
-    f.email.value = user.email || m.email || '';
-    if (m.whatsapp) f.whatsapp.value = maskPhone(m.whatsapp);
-    show('completar');
+    if (session) await seguirLogado(session.user);
   }
-
-  /* menu do celular e ano do rodapé (iguais à página inicial) */
-  document.querySelector('.menu-toggle')?.addEventListener('click', e => { const n = document.querySelector('.nav'), o = n.classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', String(o)); });
-  $('year').textContent = new Date().getFullYear();
   iniciar();
 })();

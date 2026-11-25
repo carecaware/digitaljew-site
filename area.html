@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#182838">
+<meta name="robots" content="noindex">
+<title>Minha área · DigitalJew Software</title>
+<link rel="icon" type="image/jpeg" href="assets/brand/digitaljew-logo.jpg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar" id="topo"><a class="brand" href="index.html#inicio"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button><nav class="nav"><a href="index.html#produto">Produto</a><a href="index.html#downloads">Downloads</a><a href="index.html#novidades">Novidades</a><a href="index.html#sobre">Sobre</a><a href="area.html" aria-current="page">Área do cliente</a></nav><a class="nav-cta" href="index.html#downloads">Baixar BarFácil ↗</a></header>
+
+<main class="area section">
+  <p class="area-loading" id="area-carregando">Carregando sua área…</p>
+
+  <div class="area-layout" id="area-conteudo" hidden>
+    <aside class="area-menu">
+      <div class="area-user">
+        <span class="kicker">ÁREA DO CLIENTE</span>
+        <strong id="usuario-nome">Olá!</strong>
+        <span id="usuario-email"></span>
+      </div>
+      <nav class="area-nav" aria-label="Menu da área do cliente">
+        <a href="#assinatura" data-view="assinatura">Assinatura</a>
+        <a href="#pagamento" data-abrir-pagamento>Dados de pagamento</a>
+        <a href="#meus-dados" data-view="meus-dados">Meus dados</a>
+        <button type="button" id="sair">Sair</button>
+      </nav>
+    </aside>
+
+    <div class="area-main">
+      <!-- Assinatura -->
+      <section class="area-view" data-view="assinatura">
+        <div class="kicker">01 / MINHA ASSINATURA</div>
+        <h1>Assinatura</h1>
+        <div id="assinaturas"></div>
+        <div class="empty-box" id="sem-assinatura" hidden>
+          <h3>Você ainda não tem uma assinatura do BarFácil.</h3>
+          <p>Baixe o app e comece pelo período de teste. Assim que sua assinatura for ativada, ela aparece aqui.</p>
+          <a class="button primary" href="index.html#downloads">Baixar o BarFácil ↓</a>
+        </div>
+        <p class="form-error" id="erro-assinatura" role="alert" hidden></p>
+        <a class="area-pay-link" href="#pagamento" data-abrir-pagamento>Dados de pagamento <span aria-hidden="true">→</span></a>
+      </section>
+
+      <!-- Meus dados -->
+      <section class="area-view" data-view="meus-dados" hidden>
+        <div class="kicker">02 / MEUS DADOS</div>
+        <h1>Meus dados</h1>
+        <form id="form-perfil" class="area-form" novalidate>
+          <label class="field"><span>Nome completo</span><input name="nome" autocomplete="name" required></label>
+          <label class="field"><span>E-mail</span><input name="email" type="email" readonly></label>
+          <label class="field"><span>WhatsApp</span><input name="whatsapp" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(11) 98765-4321" required></label>
+          <p class="form-error" id="erro-perfil" role="alert" hidden></p>
+          <p class="form-ok" id="ok-perfil" role="status" hidden></p>
+          <button class="button primary" type="submit">Salvar alterações</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- Painel lateral branco: dados de pagamento -->
+<div class="drawer-backdrop" id="pagamento-fundo" hidden></div>
+<aside class="drawer" id="pagamento" role="dialog" aria-modal="true" aria-labelledby="pagamento-titulo" hidden>
+  <div class="drawer-head">
+    <h2 id="pagamento-titulo">Dados de pagamento</h2>
+    <button type="button" class="drawer-close" id="pagamento-fechar" aria-label="Fechar">×</button>
+  </div>
+
+  <div class="drawer-body">
+    <h3>Cartões salvos</h3>
+    <div class="cards-empty" id="cartoes-salvos">Nenhum cartão cadastrado ainda.</div>
+
+    <h3>Adicionar cartão de crédito</h3>
+    <form id="form-cartao" novalidate autocomplete="on">
+      <label class="dfield"><span>Número do cartão</span>
+        <span class="card-input"><input name="numero" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23"><b class="card-brand" id="bandeira" aria-live="polite"></b></span>
+      </label>
+      <label class="dfield"><span>Nome impresso no cartão</span><input name="nome" autocomplete="cc-name" placeholder="Como está no cartão"></label>
+      <div class="dfield-row">
+        <label class="dfield"><span>Validade</span><input name="validade" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5"></label>
+        <label class="dfield"><span>CVV</span><input name="cvv" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4"></label>
+      </div>
+      <label class="dfield"><span>CPF do titular</span><input name="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14"></label>
+      <label class="dcheck"><input type="checkbox" name="recorrente"><span>Autorizo a cobrança mensal automática da minha assinatura neste cartão.</span></label>
+      <p class="dfield-error" id="erro-cartao" role="alert" hidden></p>
+      <p class="dnotice" id="aviso-cartao" role="status" hidden></p>
+      <button class="dbutton" type="submit">Salvar cartão</button>
+      <p class="dfine">Seus dados de cartão são enviados direto para a operadora de pagamento. A DigitalJew não guarda o número completo nem o CVV.</p>
+    </form>
+  </div>
+</aside>
+
+<footer class="footer"><a href="index.html#inicio" class="footer-brand"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><div class="footer-copy"><span>SOFTWARE COM PROPÓSITO.</span><span>© <span id="year"></span> DIGITALJEW SOFTWARE</span></div><a class="back-top" href="#topo">VOLTAR AO TOPO ↑</a></footer>
+<script src="config.js"></script>
+<script src="vendor/supabase-js-2.117.3.min.js"></script>
+<script src="conta.js"></script>
+<script src="area.js"></script>
+</body>
+</html>

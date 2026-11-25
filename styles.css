@@ -69,3 +69,87 @@
 .done .link-button{display:block;margin:18px auto 0}
 .nav a[aria-current="page"]{color:var(--cyan)}
 @media(max-width:850px){.signup{grid-template-columns:1fr}.signup-card{justify-self:stretch;max-width:none}}
+
+/* Cadastro: alternar entre cadastro e entrar */
+.switch{margin:22px 0 0;font-size:13px;color:var(--muted);text-align:center}
+.switch a{color:var(--cyan);font-weight:700}
+.done .link-button{display:block;margin:18px auto 0;text-align:center}
+
+/* Área do cliente */
+body.no-scroll{overflow:hidden}
+.area{min-height:calc(100vh - 86px - 120px)}
+.area-loading{color:var(--muted);font-size:14px}
+.area-layout{display:grid;grid-template-columns:240px 1fr;gap:clamp(30px,5vw,70px);align-items:start}
+.area-layout>*{min-width:0}
+.area-menu{position:sticky;top:110px;border:1px solid var(--line);background:var(--panel)}
+.area-user{display:flex;flex-direction:column;gap:4px;padding:22px 22px 18px;border-bottom:1px solid var(--line)}
+.area-user .kicker{margin-bottom:8px}
+.area-user strong{font-size:18px;letter-spacing:-.03em}
+.area-user span:last-child{font-size:12px;color:var(--muted);word-break:break-all}
+.area-nav{display:flex;flex-direction:column;padding:10px 0}
+.area-nav a,.area-nav button{display:block;width:100%;text-align:left;padding:12px 22px;font:700 13px var(--sans);color:#d9e1e8;background:none;border:0;border-left:2px solid transparent;cursor:pointer}
+.area-nav a:hover,.area-nav button:hover{color:var(--cyan)}
+.area-nav a[aria-current]{color:var(--cyan);border-left-color:var(--cyan);background:#58c0d00d}
+.area-nav button{color:#8fa3b3;border-top:1px solid var(--line);margin-top:8px;padding-top:16px}
+.area-main h1{font-size:clamp(32px,3.6vw,46px);letter-spacing:-.055em;margin:0 0 28px;line-height:1.1}
+.plan-card{border:1px solid #58c0d059;background:linear-gradient(115deg,#203247,#1d2d40);padding:clamp(22px,3.5vw,34px);margin-bottom:18px}
+.plan-premium{border-color:#f8c05880}
+.plan-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.plan-label{font:10px var(--mono);letter-spacing:.15em;color:#8094a5}
+.plan-status{font:10px var(--mono);letter-spacing:.1em;padding:5px 9px;border:1px solid #58c0d066;color:var(--cyan);text-transform:uppercase}
+.status-atrasada{border-color:#ff7a7a88;color:var(--red)}
+.status-teste{border-color:#f8c05888;color:var(--gold)}
+.plan-card h2{font-size:clamp(28px,3vw,38px);letter-spacing:-.05em;margin:14px 0 24px}
+.plan-card h2 span{color:var(--cyan)}
+.plan-premium h2 span{color:var(--gold)}
+.plan-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin:0;border-top:1px solid var(--line);padding-top:22px}
+.plan-meta dt{font:9px var(--mono);letter-spacing:.15em;color:#8195a5;text-transform:uppercase;margin-bottom:6px}
+.plan-meta dd{margin:0;font-size:14px;font-weight:700}
+.empty-box{border:1px dashed #58c0d059;padding:30px;margin-bottom:18px}
+.empty-box h3{margin:0 0 8px;font-size:18px}
+.empty-box p{color:var(--muted);font-size:13px;line-height:1.7;margin:0 0 20px}
+.area-pay-link{display:inline-flex;gap:8px;margin-top:10px;color:var(--gold);font-weight:800;font-size:14px}
+.area-pay-link:hover span{transform:translateX(3px)}
+.area-pay-link span{transition:transform .2s}
+.area-form{max-width:460px}
+.form-ok{color:#7fe0b0;font-size:12.5px;margin:-6px 0 16px}
+
+/* Painel branco de pagamento */
+.drawer-backdrop{position:fixed;inset:0;background:#0a1520b3;z-index:40;opacity:0;transition:opacity .3s}
+.drawer-backdrop.open{opacity:1}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);background:#fff;color:#182838;z-index:41;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.16,1,.3,1);box-shadow:-20px 0 60px #0006}
+.drawer.open{transform:none}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;padding:22px 26px;border-bottom:1px solid #e3e8ec}
+.drawer-head h2{margin:0;font-size:20px;letter-spacing:-.03em}
+.drawer-close{width:36px;height:36px;border:0;background:#f1f4f6;border-radius:50%;font-size:22px;line-height:1;color:#182838;cursor:pointer}
+.drawer-close:hover{background:#e3e8ec}
+.drawer-body{padding:8px 26px 30px;overflow-y:auto}
+.drawer-body h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#5b6b78;margin:22px 0 12px}
+.cards-empty{border:1px dashed #c9d3da;border-radius:6px;padding:16px;font-size:13px;color:#5b6b78}
+.dfield{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.dfield>span{font-size:12px;font-weight:700;color:#33475a}
+.dfield input{font:500 15px var(--sans);color:#182838;background:#fff;border:1px solid #c9d3da;border-radius:6px;padding:12px 13px;width:100%}
+.dfield input:focus{outline:2px solid #3898b8;outline-offset:0;border-color:transparent}
+.dfield input.invalid{border-color:#d93c3c}
+.dfield-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card-input{position:relative;display:block}
+.card-input input{padding-right:130px;letter-spacing:.04em}
+.card-brand{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:800;color:#3898b8;text-transform:uppercase;letter-spacing:.05em}
+.dcheck{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;color:#33475a;margin:6px 0 16px;cursor:pointer}
+.dcheck input{width:18px;height:18px;margin:1px 0 0;accent-color:#3898b8;flex-shrink:0}
+.dfield-error{color:#d93c3c;font-size:12.5px;margin:-4px 0 14px}
+.dnotice{background:#fff7e6;border-left:3px solid var(--gold);color:#5c4510;font-size:12.5px;line-height:1.6;padding:10px 12px;margin:0 0 14px}
+.dbutton{width:100%;padding:14px;border:0;border-radius:6px;background:#182838;color:#fff;font:800 14px var(--sans);cursor:pointer}
+.dbutton:hover{background:#202f40}
+.dbutton:disabled{opacity:.6;cursor:wait}
+.dfine{font-size:11px;color:#6b7b88;line-height:1.6;margin:14px 0 0}
+@media(max-width:850px){
+  .area-layout{grid-template-columns:1fr}
+  .area-menu{position:static}
+  .area-nav{display:grid;grid-template-columns:1fr 1fr;padding:0}
+  .area-nav a,.area-nav button{border-left:0;border-bottom:2px solid transparent;padding:14px 18px;margin:0}
+  .area-nav a[aria-current]{border-bottom-color:var(--cyan)}
+  .area-nav button{border-top:0;padding-top:14px}
+  .plan-meta{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){.drawer,.drawer-backdrop{transition:none}}

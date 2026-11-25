@@ -30,7 +30,7 @@ Pode ser hospedado no GitHub Pages, Vercel ou qualquer hospedagem estática. Nen
 
 O catálogo apresenta somente o BarFácil nesta primeira fase.
 ## Cadastro de clientes (`cadastro.html`)
-Página de cadastro com nome, e-mail, WhatsApp e "onde ouviu falar de nós". O cliente recebe um código de confirmação por e-mail (o WhatsApp é só um dado de contato) ou entra com o Google. Tudo passa pelo Supabase Auth do projeto do BarFácil (configurado em `config.js`). Arquivos: `cadastro.html`, `cadastro.js`, `vendor/supabase-js-2.117.3.min.js` e `supabase/clientes.sql`.
+Página de cadastro com nome, e-mail, WhatsApp e "onde ouviu falar de nós". O cliente recebe um código de confirmação por e-mail (o WhatsApp é só um dado de contato) ou entra com o Google. Tudo passa pelo Supabase Auth do projeto do BarFácil (configurado em `config.js`). Arquivos: `cadastro.html`, `cadastro.js`, `conta.js` (base compartilhada), `vendor/supabase-js-2.117.3.min.js` e `supabase/clientes.sql`. A mesma página tem a opção **Entrar** (`cadastro.html#entrar`) para quem já tem conta.
 
 Para funcionar de verdade, configure uma vez no painel do Supabase:
 
@@ -40,3 +40,11 @@ Para funcionar de verdade, configure uma vez no painel do Supabase:
 4. **Endereço do site:** em *Authentication → URL Configuration*, coloque o endereço público do site em *Site URL* e em *Redirect URLs* (ex.: `https://seusite.com/cadastro.html`). O login com Google não funciona com o arquivo aberto direto do disco.
 
 A validade do código e a espera entre reenvios ficam em `config.js` (`codeTtlMinutes`, `resendCooldownSeconds`) e precisam bater com o Supabase.
+
+## Área do cliente (`area.html`)
+Abre só para quem está logado (quem não está vai para `cadastro.html#entrar`). Arquivos: `area.html`, `area.js` e `supabase/assinaturas.sql`.
+
+- **Login que não expira:** a sessão fica guardada no navegador e é renovada sozinha; o cliente só sai clicando em **Sair**. No Supabase, em *Authentication → Sessions*, deixe **Time-box user sessions** e **Inactivity timeout** desligados (é o padrão).
+- **Assinatura:** mostra o plano (Teste, Básica ou Premium), a versão do app (Windows ou Mobile), a próxima cobrança (ou o fim do teste) e o valor. Os dados vêm da tabela `assinaturas`: rode `supabase/assinaturas.sql` (depois do `clientes.sql`) e cadastre as assinaturas pelo painel do Supabase — o arquivo tem exemplos prontos. O cliente só consegue ler as próprias assinaturas.
+- **Dados de pagamento:** painel branco que desliza da direita, com número do cartão (detecta a bandeira), nome impresso, validade, CVV, CPF do titular e autorização de cobrança mensal. Os campos já são conferidos, mas **nada é salvo nem enviado** até a integração com a operadora. O ponto de ligação é a função `salvarCartao` em `area.js` (ative com `payments: { ready: true, salvarCartao }` em `config.js`). Nunca guarde número completo ou CVV no Supabase: use a tokenização da operadora.
+- **Meus dados:** o cliente edita nome e WhatsApp.
