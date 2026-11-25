@@ -13,13 +13,13 @@ Em cada arquivo: abra o link, clique no ícone de **copiar** (dois quadradinhos,
 direito do código), cole em **SQL Editor → New query** e clique em **Run**. Todos podem ser
 rodados mais de uma vez; se você rodou uma versão antiga, rode a atual por cima.
 
-- [ ] **1.1** `clientes.sql` (site) — tabela de clientes
+- [x] **1.1** `clientes.sql` (site) — tabela de clientes
   https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/clientes.sql
-- [ ] **1.2** `licencas-cliente.sql` (site) — liga as licenças à conta e alimenta a aba Assinatura
+- [x] **1.2** `licencas-cliente.sql` (site) — liga as licenças à conta e alimenta a aba Assinatura
   https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/licencas-cliente.sql
-- [ ] **1.3** `migration-008.sql` (app) — um teste por aparelho
+- [x] **1.3** `migration-008.sql` (app) — um teste por aparelho
   https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/migration-008.sql
-- [ ] **1.4** `downloads-e-chaves.sql` (site) — chave de teste automática e permissão de download
+- [x] **1.4** `downloads-e-chaves.sql` (site) — chave de teste automática e permissão de download
   https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/downloads-e-chaves.sql
 
 **Limpeza (só se você rodou versões antigas):**
@@ -30,14 +30,14 @@ rodados mais de uma vez; se você rodou uma versão antiga, rode a atual por cim
 
 ## 2. Edge Functions
 
-- [ ] **2.1** Segredo `GITHUB_TOKEN` em **Edge Functions → Secrets**: token *fine-grained* só do
+- [x] **2.1** Segredo `GITHUB_TOKEN` em **Edge Functions → Secrets**: token *fine-grained* só do
   `carecaware/releases`, com **Contents: Read-only**.
-- [ ] **2.2** Função **`download-instalador`** (nova): **Deploy a new function → Via Editor**, nome
+- [x] **2.2** Função **`download-instalador`** (nova): **Deploy a new function → Via Editor**, nome
   exatamente `download-instalador`, cole o código e faça o deploy:
   https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/functions/download-instalador/index.ts
-- [ ] **2.3** Na `download-instalador`, **desligue "Enforce JWT verification"** (a própria função
+- [x] **2.3** Na `download-instalador`, **desligue "Enforce JWT verification"** (a própria função
   confere o login nos downloads; a seção Novidades é pública).
-- [ ] **2.4** Função **`validate-license`** (já existe): substitua o código por este e faça o deploy,
+- [x] **2.4** Função **`validate-license`** (já existe): substitua o código por este e faça o deploy,
   mantendo o "Enforce JWT verification" **desligado** — rode antes o item 1.3:
   https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/functions/validate-license/index.ts
 
@@ -47,18 +47,26 @@ Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
 
 ## 3. Authentication
 
-- [ ] **3.1 Emails → Magic Link:** inclua `{{ .Token }}` no texto, por exemplo:
-  `Seu código de acesso à DigitalJew é: {{ .Token }}. Ele vale por 10 minutos.`
-  Sem isso, o cliente recebe um link em vez do código de 6 dígitos.
-- [ ] **3.2 Providers → Email:** *Email OTP Expiration* = `600` (10 minutos, o mesmo do site).
-- [ ] **3.3 Providers → Google:** ative e cole o *Client ID* e o *Client Secret*. No Google Cloud
+- [ ] **3.0 Serviço de e-mail próprio (SMTP) — OBRIGATÓRIO.** O envio embutido do Supabase manda só
+  2 e-mails por hora e só para membros da equipe do projeto: clientes não recebem o código. Crie uma
+  conta num serviço como **Resend** ou **Brevo** (há planos gratuitos) e preencha em
+  *Authentication → Emails → SMTP Settings* (host, porta, usuário, senha e remetente). O ideal é ter
+  um domínio próprio para o remetente.
+- [ ] **3.1 Modelos de e-mail com o código** (só depois do 3.0: no plano gratuito o Supabase não deixa
+  editar os modelos sem SMTP próprio). Os textos prontos, em português, estão em
+  `supabase/emails/confirmar-cadastro.html` (*Confirm signup*) e `supabase/emails/codigo-de-acesso.html`
+  (*Magic Link*); o assunto está na primeira linha de cada arquivo. Sem eles, o cliente recebe um link
+  em vez do código.
+- [x] **3.2 Providers → Email:** validade do código = `600` (10 minutos) e código com 6 dígitos.
+- [x] **3.3 Providers → Google:** ative e cole o *Client ID* e o *Client Secret*. No Google Cloud
   Console, a credencial (tipo *Web application*) precisa ter o redirecionamento
   `https://sydjqruprgixevqcrhdv.supabase.co/auth/v1/callback`. Publique o app de consentimento
   ("Publish app") para sair do modo de teste.
-- [ ] **3.4 URL Configuration:**
+- [ ] **3.4 URL Configuration:** (já feito para testar no PC: `http://localhost:8000`; falta o
+  endereço público quando o site estiver no ar)
   - *Site URL*: o endereço público do site.
   - *Redirect URLs*: `https://SEU-SITE/**` e, para testar no PC, `http://localhost:8000/**`.
-- [ ] **3.5 Sessions:** *Time-box user sessions* e *Inactivity timeout* **desligados** (padrão) —
+- [x] **3.5 Sessions:** *Time-box user sessions* e *Inactivity timeout* **desligados** (padrão) —
   é o que mantém o cliente logado até clicar em "Sair".
 
 ## 4. Dados
@@ -73,9 +81,12 @@ Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
 
 ## 5. GitHub
 
+- [ ] **5.0** Revisar as releases que já estão no `carecaware/releases`: a mais nova (v1.0.13) é uma
+  versão interna com botões de bypass, e a nota dela aparece na seção Novidades. Apague-as ou marque
+  como *pre-release* antes de o site ir ao ar (o site ignora pré-lançamentos).
 - [ ] **5.1** Token de escrita novo (*fine-grained*, só `carecaware/releases`, **Contents: Read and
   write**, validade mais longa permitida) e colado em `barfacil-source-code` → *Settings → Secrets
-  and variables → Actions* → **`RELEASES_TOKEN`**.
+  and variables → Actions* → **`RELEASES_TOKEN`** (no GitHub, **não** no Supabase).
 - [ ] **5.2** Apagar o token antigo na lista de tokens do GitHub.
 - [ ] **5.3** Se a organização exigir, aprovar os tokens em *carecaware → Settings → Personal
   access tokens*.
@@ -92,8 +103,8 @@ Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
 
 ## 7. Conferir que funcionou
 
-- [ ] A seção **Novidades** da página inicial mostra as versões publicadas (prova que o
-  `GITHUB_TOKEN` e a `download-instalador` estão certos).
+- [x] A seção **Novidades** da página inicial mostra as versões publicadas (prova que o
+  `GITHUB_TOKEN` e a `download-instalador` estão certos) — conferido ao vivo.
 - [ ] Cadastro com um e-mail seu: chega o **código de 6 dígitos** e o cadastro termina.
 - [ ] Aba **Downloads**: aparece a versão, o botão baixa o instalador e aparece a chave de teste.
 - [ ] A chave ativa o app num computador; uma **segunda** chave de teste no mesmo computador é recusada.

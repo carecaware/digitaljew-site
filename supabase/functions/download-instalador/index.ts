@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       if (!rels) return json({ ok: false, motivo: "github_indisponivel" }, 502);
       const versoes = rels.slice(0, 12).map((x) => ({
         tag_name: x.tag_name, name: x.name, body: (x.body || "").slice(0, 4000), published_at: x.published_at,
-        assets: x.assets.map((a) => ({ name: a.name })),
+        assets: x.assets.filter((a) => /\.(exe|msi|apk)$/i.test(a.name)).map((a) => ({ name: a.name })),
       }));
       return new Response(JSON.stringify({ ok: true, versoes }), {
         headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "public, max-age=300" },
