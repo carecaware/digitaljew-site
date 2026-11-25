@@ -144,6 +144,22 @@
     ['Mastercard', /^(5[1-5]|2(2[2-9]|[3-6]|7[01]|720))/]
   ];
   const bandeira = n => (BANDEIRAS.find(([, r]) => r.test(n)) || [''])[0];
+  /* Ícones simplificados das bandeiras (troque pelos oficiais da operadora na integração). */
+  const svg = body => `<svg viewBox="0 0 40 26" aria-hidden="true" focusable="false">${body}</svg>`;
+  const txt = (t, cor, tam = 11, peso = 800, extra = '') => `<text x="20" y="17.5" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="${tam}" font-weight="${peso}" fill="${cor}"${extra}>${t}</text>`;
+  const ICONES = {
+    'Visa': svg('<rect width="40" height="26" rx="4" fill="#fff"/>' + txt('VISA', '#1a1f71', 11.5, 900, ' font-style="italic" letter-spacing=".5"')),
+    'Mastercard': svg('<rect width="40" height="26" rx="4" fill="#fff"/><circle cx="16" cy="13" r="7.5" fill="#eb001b"/><circle cx="24" cy="13" r="7.5" fill="#f79e1b"/><path d="M20 6.6a7.5 7.5 0 0 1 0 12.8 7.5 7.5 0 0 1 0-12.8z" fill="#ff5f00"/>'),
+    'Elo': svg('<rect width="40" height="26" rx="4" fill="#111"/><circle cx="8" cy="8.2" r="2.3" fill="#ffcb05"/><circle cx="8" cy="13" r="2.3" fill="#00a4e0"/><circle cx="8" cy="17.8" r="2.3" fill="#ef4123"/>' + '<text x="25.5" y="17.5" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="800" fill="#fff">elo</text>'),
+    'American Express': svg('<rect width="40" height="26" rx="4" fill="#2e77bc"/>' + txt('AMEX', '#fff', 10, 900, ' letter-spacing=".3"')),
+    'Hipercard': svg('<rect width="40" height="26" rx="4" fill="#b3131b"/>' + txt('Hiper', '#fff', 10.5, 800)),
+    'Diners': svg('<rect width="40" height="26" rx="4" fill="#fff"/><circle cx="20" cy="13" r="8.5" fill="#0079be"/><circle cx="20" cy="13" r="5.6" fill="#fff"/><rect x="19.2" y="7.4" width="1.6" height="11.2" fill="#0079be"/>')
+  };
+  function mostrarBandeira(b) {
+    const el = $('bandeira');
+    el.innerHTML = b ? `${ICONES[b] || ''}<span>${b}</span>` : '';
+    el.classList.toggle('on', !!b);
+  }
   function luhn(n) { let s = 0, dbl = false; for (let i = n.length - 1; i >= 0; i--) { let d = +n[i]; if (dbl) { d *= 2; if (d > 9) d -= 9; } s += d; dbl = !dbl; } return s % 10 === 0; }
   function cpfValido(c) {
     if (!/^\d{11}$/.test(c) || /^(\d)\1+$/.test(c)) return false;
@@ -154,7 +170,7 @@
   fc.numero.addEventListener('input', () => {
     const n = digits(fc.numero.value).slice(0, 19), b = bandeira(n);
     fc.numero.value = b === 'American Express' ? n.replace(/^(\d{4})(\d{0,6})(\d{0,5}).*/, (m, a, b2, c) => [a, b2, c].filter(Boolean).join(' ')) : n.replace(/(\d{4})(?=\d)/g, '$1 ');
-    $('bandeira').textContent = b;
+    mostrarBandeira(b);
     fc.cvv.maxLength = b === 'American Express' ? 4 : 3;
   });
   fc.validade.addEventListener('input', () => { const d = digits(fc.validade.value).slice(0, 4); fc.validade.value = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d; });
@@ -203,7 +219,7 @@
         : 'Não foi possível salvar o cartão agora. Tente de novo.');
     } finally {
       busy(btn, false);
-      fc.numero.value = ''; fc.cvv.value = ''; $('bandeira').textContent = '';
+      fc.numero.value = ''; fc.cvv.value = ''; mostrarBandeira('');
     }
   });
 

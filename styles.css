@@ -133,8 +133,10 @@ body.no-scroll{overflow:hidden}
 .dfield input.invalid{border-color:#d93c3c}
 .dfield-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .card-input{position:relative;display:block}
-.card-input input{padding-right:130px;letter-spacing:.04em}
-.card-brand{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:800;color:#3898b8;text-transform:uppercase;letter-spacing:.05em}
+.card-input input{padding-right:150px;letter-spacing:.04em}
+.card-brand{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;color:#5b6b78;text-transform:uppercase;letter-spacing:.04em;pointer-events:none;opacity:0;transition:opacity .2s}
+.card-brand.on{opacity:1}
+.card-brand svg{width:38px;height:25px;border-radius:4px;box-shadow:0 0 0 1px #d6dde2;flex-shrink:0;text-transform:none;letter-spacing:0}
 .dcheck{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;color:#33475a;margin:6px 0 16px;cursor:pointer}
 .dcheck input{width:18px;height:18px;margin:1px 0 0;accent-color:#3898b8;flex-shrink:0}
 .dfield-error{color:#d93c3c;font-size:12.5px;margin:-4px 0 14px}
