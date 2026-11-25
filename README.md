@@ -42,7 +42,7 @@ Para funcionar de verdade, configure uma vez no painel do Supabase:
 A validade do código e a espera entre reenvios ficam em `config.js` (`codeTtlMinutes`, `resendCooldownSeconds`) e precisam bater com o Supabase.
 
 ## Área do cliente (`area.html`)
-Abre só para quem está logado (quem não está vai para `cadastro.html#entrar`). Arquivos: `area.html`, `area.js` e `supabase/assinaturas.sql`.
+Abre só para quem está logado (quem não está vai para `cadastro.html#entrar`). Arquivos: `area.html`, `area.js` e `supabase/licencas-cliente.sql`.
 
 - **Login que não expira:** a sessão fica guardada no navegador e é renovada sozinha; o cliente só sai clicando em **Sair**. No Supabase, em *Authentication → Sessions*, deixe **Time-box user sessions** e **Inactivity timeout** desligados (é o padrão).
 - **Assinatura:** vem direto das **licenças do app** (tabelas `licenses`, `license_activations` e `premium_keys`). Rode `supabase/licencas-cliente.sql` (depois do `clientes.sql`). Ele cria a função `minhas_licencas()`, que devolve só um resumo das licenças do cliente logado: plano (Teste, Básica ou Premium, já considerando chave premium e volta para a Básica), versão do app, fim do teste ou próxima cobrança (mesmo dia do mês em que a cobrança começou, como no app) e os 4 últimos caracteres da chave. A tabela `licenses` continua fechada para o site.
