@@ -227,3 +227,5 @@ mark.preencher{background:#f8c058;color:#182838;padding:1px 6px;border-radius:2p
 .dl-steps li:before{content:counter(p,decimal-leading-zero);position:absolute;left:0;top:1px;font:11px var(--mono);color:var(--gold);letter-spacing:.1em}
 .dl-steps b{color:var(--white)}
 @media(max-width:850px){.dl-grid{grid-template-columns:1fr}.download-steps{grid-template-columns:1fr}}
+
+.field .opcional{font-style:normal;font-weight:500;color:#8fa3b3}
