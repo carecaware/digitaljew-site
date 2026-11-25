@@ -13,7 +13,7 @@ Site institucional e central de downloads do BarFácil. Site estático, sem etap
 A imagem oficial deve ficar em `assets/brand/digitaljew-logo.jpg`. Substitua esse arquivo para atualizar os pontos de uso; mantenha o mesmo caminho ou ajuste as referências no HTML.
 
 ## Downloads
-O arquivo `config.js` define o repositório que publica as GitHub Releases. O portal consulta a API pública e aponta o botão diretamente para o asset `browser_download_url`, sem abrir a página do GitHub. O repositório de releases precisa ser público para visitantes sem autenticação. Publique os instaladores como assets das releases (.exe/.msi para Windows).
+Os downloads ficam na área do cliente (veja "Downloads e chave de teste" abaixo). O `githubRepo` do `config.js` só alimenta a seção Novidades da página inicial, que lê as notas das releases pela API pública: com o repositório privado, a seção mostra um aviso neutro.
 
 Atualmente está configurado `carecaware/releases`. Se as releases forem publicadas em outro repositório, altere `githubRepo` em `config.js`.
 
@@ -54,7 +54,11 @@ Abre só para quem está logado (quem não está vai para `cadastro.html#entrar`
 ## Downloads e chave de teste (área do cliente → Downloads)
 Para baixar o app é preciso ter conta. Os botões "Baixar" do site levam para `area.html#downloads`; quem não está logado vai para o cadastro e volta direto para os Downloads.
 
-- **Instaladores:** ficam na pasta **privada** `instaladores` do Supabase Storage, com as subpastas `windows` (.exe/.msi) e `android` (.apk). A área do cliente oferece sempre o arquivo **mais novo** de cada subpasta, por um link temporário de 5 minutos. Para publicar uma versão: *Storage → instaladores → windows* (ou *android*) → *Upload file*.
+- **Instaladores:** ficam nas **releases do repositório privado `carecaware/releases`** no GitHub (grátis, sem limite de tamanho ou de downloads que preocupe). Quem entrega o arquivo é a função `supabase/functions/download-instalador`: ela confere se a pessoa está logada e cadastrada, acha o `.exe`/`.apk` da release mais nova (ignora rascunhos e pré-lançamentos) e devolve um link temporário do próprio GitHub. Cada versão nova é publicada ali automaticamente pelo `release.yml` do app quando você cria a tag (`scripts/release.sh`); também dá para criar a release à mão no GitHub e anexar os arquivos.
 - **Chave:** cada conta recebe **uma** chave de teste de 7 dias por plataforma (Windows e Android), criada automaticamente na primeira vez que a pessoa baixa ou clica em "Gerar minha chave". Se o cliente já tiver uma chave paga ligada ao e-mail, é ela que aparece. Uma conta que já teve teste numa plataforma não ganha outro.
 - **Um teste por aparelho:** garantido na ativação pelo app (`migration-008.sql` e a função `validate-license` do repositório do app). Mesmo criando várias contas, o mesmo computador não ativa um segundo teste.
-- **Configuração, nesta ordem:** `clientes.sql` → `licencas-cliente.sql` → `migration-008.sql` (repositório do app) → `downloads-e-chaves.sql`. Depois, implante de novo a função `validate-license`.
+- **Configuração, nesta ordem:** `clientes.sql` → `licencas-cliente.sql` → `migration-008.sql` (repositório do app) → `downloads-e-chaves.sql`. Depois, implante de novo a função `validate-license` (repositório do app) e implante a `download-instalador` (deste repositório):
+  1. Crie um token *fine-grained* no GitHub com acesso **só** ao `carecaware/releases` e permissão **Contents: Read-only**.
+  2. No Supabase, em *Edge Functions → Secrets*, crie o segredo `GITHUB_TOKEN` com esse token.
+  3. `supabase functions deploy download-instalador` (com a verificação de login ligada, que é o padrão).
+  4. No repositório do app, em *Settings → Secrets and variables → Actions*, crie o segredo `RELEASES_TOKEN` com outro token *fine-grained* só do `carecaware/releases`, com **Contents: Read and write** (é o que publica as versões).

@@ -75,23 +75,12 @@ revoke all on function minha_chave(text, boolean) from public, anon;
 grant execute on function minha_chave(text, boolean) to authenticated;
 
 -- ---------------------------------------------------------------------------------------------
--- 2) Pasta PRIVADA com os instaladores. Só clientes logados e cadastrados conseguem baixar, por
---    links temporários (5 minutos) gerados pela área do cliente.
---    Envie os arquivos em: Storage -> instaladores -> pasta "windows" (.exe/.msi) e pasta "android" (.apk).
---    A área do cliente sempre oferece o arquivo MAIS NOVO de cada pasta.
+-- 2) Quem pode baixar os instaladores: logado E com cadastro completo. Usada pela função
+--    download-instalador (supabase/functions), que busca o arquivo nas releases privadas do GitHub.
 -- ---------------------------------------------------------------------------------------------
-insert into storage.buckets (id, name, public) values ('instaladores', 'instaladores', false)
-on conflict (id) do nothing;
-
--- quem está logado E tem cadastro completo
 create or replace function eh_cliente() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from clientes where id = auth.uid());
 $$;
 revoke all on function eh_cliente() from public, anon;
 grant execute on function eh_cliente() to authenticated;
-
-drop policy if exists "clientes baixam instaladores" on storage.objects;
-create policy "clientes baixam instaladores" on storage.objects
-  for select to authenticated
-  using (bucket_id = 'instaladores' and public.eh_cliente());

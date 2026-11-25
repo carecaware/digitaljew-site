@@ -67,17 +67,21 @@
     $('sem-assinatura').hidden = lista.length > 0;
   }
 
-  /* ---------- downloads: instaladores (pasta privada) e chave de cada plataforma ---------- */
-  const BUCKET = cfg.downloadsBucket || 'instaladores';
-  const PASTAS = { windows: { pasta: 'windows', ext: /\.(exe|msi)$/i, nome: 'Windows' }, mobile: { pasta: 'android', ext: /\.apk$/i, nome: 'Android' } };
+  /* ---------- downloads: instaladores (releases privadas do GitHub) e chave de cada plataforma ---------- */
+  // A função download-instalador do Supabase confere o login e devolve o arquivo mais novo
+  // e, na hora de baixar, um link temporário do GitHub.
+  const PASTAS = { windows: { nome: 'Windows' }, mobile: { nome: 'Android' } };
   const tamanho = n => n ? (n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1).replace('.', ',')} MB`) : '';
   const instalador = {};
 
-  async function maisNovo(plat) {
-    const P = PASTAS[plat];
-    const { data, error } = await sb.storage.from(BUCKET).list(P.pasta, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
-    if (error) throw error;
-    return (data || []).filter(f => P.ext.test(f.name)).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0] || null;
+  async function instaladorApi(plataforma, acao) {
+    const { data, error } = await sb.functions.invoke('download-instalador', { body: { plataforma, acao } });
+    if (error) {
+      let motivo = 'falha';
+      try { motivo = (await error.context.json()).motivo || motivo; } catch {}
+      throw { motivo };
+    }
+    return data;
   }
 
   function mostrarChave(card, r) {
@@ -120,11 +124,11 @@
       const plat = card.dataset.plataforma, arq = card.querySelector('[data-arquivo]'), btn = card.querySelector('[data-baixar]');
       pegarChave(card, false);
       try {
-        const f = await maisNovo(plat);
+        const f = (await instaladorApi(plat, 'info')).arquivo;
         instalador[plat] = f;
         if (!f) { arq.textContent = 'Versão ainda não disponível. Volte em breve.'; return; }
-        const data = f.created_at ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(f.created_at)) : '';
-        arq.textContent = [f.name, tamanho(f.metadata && f.metadata.size), data].filter(Boolean).join(' · ');
+        const data = f.data ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(f.data)) : '';
+        arq.textContent = [f.versao ? 'Versão ' + f.versao.replace(/^v/, '') : '', tamanho(f.tamanho), data].filter(Boolean).join(' · ');
         btn.disabled = false;
       } catch (e) { console.error(e); arq.textContent = 'Não foi possível consultar os arquivos agora.'; }
     });
@@ -137,9 +141,8 @@
     try {
       // garante a chave de teste para quem ainda não tem (uma por conta e por plataforma)
       await pegarChave(card, true);
-      const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(`${PASTAS[plat].pasta}/${f.name}`, 300, { download: f.name });
-      if (error) throw error;
-      location.href = data.signedUrl;
+      const { url } = await instaladorApi(plat, 'baixar');
+      location.href = url;
     } catch (e) {
       console.error(e);
       card.querySelector('[data-arquivo]').textContent = 'Não foi possível iniciar o download. Tente de novo.';

@@ -14,9 +14,6 @@ window.DIGITALJEW_CONFIG = {
   /* Intervalo mínimo entre pedidos de código (o padrão do Supabase é 60 s). */
   resendCooldownSeconds: 60,
 
-  /* Pasta privada do Supabase Storage com os instaladores (subpastas "windows" e "android"). */
-  downloadsBucket: "instaladores",
-
   /* Valor mensal mostrado na área do cliente (deixe null para não mostrar). Ex.: basica: 29.90 */
   precos: { basica: null, premium: null }
 };
