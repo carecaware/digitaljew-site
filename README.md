@@ -30,14 +30,13 @@ Pode ser hospedado no GitHub Pages, Vercel ou qualquer hospedagem estática. Nen
 
 O catálogo apresenta somente o BarFácil nesta primeira fase.
 ## Cadastro de clientes (`cadastro.html`)
-Página de cadastro com nome, e-mail, WhatsApp e "onde ouviu falar de nós". O cliente escolhe receber o código de confirmação por e-mail ou WhatsApp, ou entra com o Google. Tudo passa pelo Supabase Auth do projeto do BarFácil (configurado em `config.js`). Arquivos: `cadastro.html`, `cadastro.js`, `vendor/supabase-js-2.117.3.min.js` e `supabase/clientes.sql`.
+Página de cadastro com nome, e-mail, WhatsApp e "onde ouviu falar de nós". O cliente recebe um código de confirmação por e-mail (o WhatsApp é só um dado de contato) ou entra com o Google. Tudo passa pelo Supabase Auth do projeto do BarFácil (configurado em `config.js`). Arquivos: `cadastro.html`, `cadastro.js`, `vendor/supabase-js-2.117.3.min.js` e `supabase/clientes.sql`.
 
 Para funcionar de verdade, configure uma vez no painel do Supabase:
 
 1. **Tabela:** rode `supabase/clientes.sql` no SQL Editor.
 2. **Código por e-mail:** em *Authentication → Emails → Magic Link*, inclua `{{ .Token }}` no texto (o modelo padrão manda só um link, não o código). Em *Authentication → Providers → Email*, deixe *Email OTP Expiration* em `600` (10 minutos).
-3. **Código por WhatsApp:** em *Authentication → Providers → Phone*, ative o provedor **Twilio** (ou Twilio Verify) com um remetente de WhatsApp aprovado, e deixe a validade em `600`. A Twilio cobra por mensagem.
-4. **Login com Google:** crie um "OAuth client ID" (tipo *Web application*) no Google Cloud Console, com o redirecionamento `https://sydjqruprgixevqcrhdv.supabase.co/auth/v1/callback`. Cole o Client ID e o Secret em *Authentication → Providers → Google*.
-5. **Endereço do site:** em *Authentication → URL Configuration*, coloque o endereço público do site em *Site URL* e em *Redirect URLs* (ex.: `https://seusite.com/cadastro.html`). O login com Google não funciona com o arquivo aberto direto do disco.
+3. **Login com Google:** crie um "OAuth client ID" (tipo *Web application*) no Google Cloud Console, com o redirecionamento `https://sydjqruprgixevqcrhdv.supabase.co/auth/v1/callback`. Cole o Client ID e o Secret em *Authentication → Providers → Google*.
+4. **Endereço do site:** em *Authentication → URL Configuration*, coloque o endereço público do site em *Site URL* e em *Redirect URLs* (ex.: `https://seusite.com/cadastro.html`). O login com Google não funciona com o arquivo aberto direto do disco.
 
 A validade do código e a espera entre reenvios ficam em `config.js` (`codeTtlMinutes`, `resendCooldownSeconds`) e precisam bater com o Supabase.

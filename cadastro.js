@@ -1,5 +1,5 @@
 /* Página de cadastro do cliente.
- * Envio e conferência dos códigos, e login com Google, feitos pelo Supabase Auth.
+ * Código de confirmação por e-mail e login com Google, feitos pelo Supabase Auth.
  * Configuração (URL, chave pública, validade do código) em config.js. */
 (() => {
   const cfg = window.DIGITALJEW_CONFIG || {};
@@ -12,7 +12,7 @@
     : null;
 
   // Estado do cadastro em andamento
-  const st = { dados: null, canal: null, expiraEm: 0, esperaAte: 0, timer: null };
+  const st = { dados: null, expiraEm: 0, esperaAte: 0, timer: null };
 
   /* ---------- utilidades ---------- */
   const digits = v => String(v || '').replace(/\D/g, '');
@@ -28,7 +28,6 @@
   const validPhone = v => /^[1-9]{2}9?\d{8}$/.test(nationalDigits(v));
   const validEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v).trim());
   function hideEmail(e) { const [u, d] = e.split('@'); return (u.length <= 2 ? u[0] + '*' : u.slice(0, 2) + '•••') + '@' + d; }
-  function hidePhone(p) { const d = nationalDigits(p); return `(${d.slice(0, 2)}) •••••-${d.slice(-4)}`; }
 
   function show(step) {
     document.querySelectorAll('.step').forEach(s => { s.hidden = s.dataset.step !== step; });
@@ -48,8 +47,7 @@
   function sendError(err) {
     const code = err && (err.code || ''), status = err && err.status;
     if (status === 429 || /rate_limit/.test(code)) return 'Muitos pedidos de código seguidos. Aguarde um minuto e tente de novo.';
-    if (/sms_send_failed|phone_provider_disabled/.test(code)) return 'Não conseguimos enviar pelo WhatsApp agora. Tente receber por e-mail.';
-    if (/email_provider_disabled|email_address_invalid/.test(code)) return 'Não conseguimos enviar para este e-mail. Confira o endereço ou tente pelo WhatsApp.';
+    if (/email_provider_disabled|email_address_invalid/.test(code)) return 'Não conseguimos enviar para este e-mail. Confira o endereço e tente de novo.';
     return 'Não foi possível enviar o código agora. Tente de novo em instantes.';
   }
   function notConfigured(el) { msg(el, 'O cadastro ainda não está configurado neste site (falta a conexão com o Supabase em config.js).'); }
@@ -72,54 +70,40 @@
     return { nome, email: email.toLowerCase(), whatsapp: phoneE164(whats), origem: origemDe(form) };
   }
 
-  $('form-dados').addEventListener('submit', e => {
-    e.preventDefault();
-    const dados = validar(e.target, $('erro-dados'));
-    if (!dados) return;
-    st.dados = dados;
-    $('canal-email-destino').textContent = hideEmail(dados.email);
-    $('canal-whats-destino').textContent = hidePhone(dados.whatsapp);
-    msg($('erro-canal'), '');
-    show('canal');
-  });
-
   document.querySelectorAll('[data-voltar]').forEach(b => b.addEventListener('click', () => show(b.dataset.voltar)));
 
-  /* ---------- passo 2: escolher canal e enviar ---------- */
+  /* ---------- enviar o código por e-mail ---------- */
   async function enviarCodigo() {
     if (!sb) throw { code: 'not_configured' };
     const meta = { nome: st.dados.nome, email: st.dados.email, whatsapp: st.dados.whatsapp, origem: st.dados.origem };
-    const r = st.canal === 'email'
-      ? await sb.auth.signInWithOtp({ email: st.dados.email, options: { shouldCreateUser: true, data: meta } })
-      : await sb.auth.signInWithOtp({ phone: st.dados.whatsapp, options: { shouldCreateUser: true, channel: 'whatsapp', data: meta } });
+    const r = await sb.auth.signInWithOtp({ email: st.dados.email, options: { shouldCreateUser: true, data: meta } });
     if (r.error) throw r.error;
     st.expiraEm = Date.now() + TTL_MS;
     iniciarEspera();
   }
+  const textoEnvio = novo => `Enviamos um${novo ? ' novo' : ''} código para o e-mail ${hideEmail(st.dados.email)}. Ele vale por ${cfg.codeTtlMinutes || 10} minutos.`;
 
-  document.querySelectorAll('.channel').forEach(btn => btn.addEventListener('click', async () => {
-    const err = $('erro-canal');
+  $('form-dados').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('erro-dados');
+    const dados = validar(e.target, err);
+    if (!dados) return;
     if (!sb) return notConfigured(err);
-    st.canal = btn.dataset.canal;
-    document.querySelectorAll('.channel').forEach(b => { b.disabled = true; });
-    btn.classList.add('sending');
-    msg(err, '');
+    st.dados = dados;
+    const btn = e.target.querySelector('button[type="submit"]');
+    busy(btn, true, 'Enviando código…');
     try {
       await enviarCodigo();
-      const destino = st.canal === 'email' ? 'para o e-mail ' + hideEmail(st.dados.email) : 'pelo WhatsApp ' + hidePhone(st.dados.whatsapp);
-      $('codigo-texto').textContent = `Enviamos um código ${destino}. Ele vale por ${cfg.codeTtlMinutes || 10} minutos.`;
+      $('codigo-texto').textContent = textoEnvio(false);
       $('form-codigo').reset();
-      msg($('erro-codigo'), '');
+      erroCodigo('');
       show('codigo');
     } catch (e2) {
-      msg(err, sendError(e2));
-    } finally {
-      document.querySelectorAll('.channel').forEach(b => { b.disabled = false; });
-      btn.classList.remove('sending');
-    }
-  }));
+      msg(err, e2 && e2.code === 'not_configured' ? '' : sendError(e2));
+    } finally { busy(btn, false); }
+  });
 
-  /* ---------- passo 3: código ---------- */
+  /* ---------- passo 2: código ---------- */
   const campo = $('campo-codigo');
   campo.addEventListener('input', () => { campo.value = digits(campo.value).slice(0, 10); campo.classList.remove('invalid'); });
 
@@ -133,9 +117,7 @@
     const btn = e.target.querySelector('button[type="submit"]');
     busy(btn, true, 'Conferindo…');
     try {
-      const r = st.canal === 'email'
-        ? await sb.auth.verifyOtp({ email: st.dados.email, token, type: 'email' })
-        : await sb.auth.verifyOtp({ phone: st.dados.whatsapp, token, type: 'sms' });
+      const r = await sb.auth.verifyOtp({ email: st.dados.email, token, type: 'email' });
       if (r.error) {
         // O Supabase usa "otp_expired" tanto para código vencido quanto errado: o relógio local decide.
         if (Date.now() > st.expiraEm) return erroCodigo('O código está expirado. Clique abaixo para enviar um novo código.');
@@ -143,7 +125,7 @@
         return erroCodigo('Código incorreto. Confira os números e tente de novo.');
       }
       erroCodigo('');
-      await salvarCliente(r.data.user, { ...st.dados, metodo: st.canal });
+      await salvarCliente(r.data.user, { ...st.dados, metodo: 'email' });
       concluir(st.dados.nome);
     } catch (e2) {
       erroCodigo(e2 && e2.salvar ? 'Seu código foi confirmado, mas não conseguimos salvar o cadastro. Tente de novo.' : 'Não foi possível conferir o código agora. Tente de novo.');
@@ -171,8 +153,7 @@
       await enviarCodigo();
       campo.value = '';
       erroCodigo('');
-      const destino = st.canal === 'email' ? 'para o e-mail ' + hideEmail(st.dados.email) : 'pelo WhatsApp ' + hidePhone(st.dados.whatsapp);
-      $('codigo-texto').textContent = `Enviamos um novo código ${destino}. Ele vale por ${cfg.codeTtlMinutes || 10} minutos.`;
+      $('codigo-texto').textContent = textoEnvio(true);
       campo.focus();
     } catch (e2) {
       erroCodigo(sendError(e2));

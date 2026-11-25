@@ -45,18 +45,7 @@
       </form>
     </section>
 
-    <!-- Passo 2: onde receber o código -->
-    <section class="step" data-step="canal" hidden>
-      <h2>Onde você quer receber o código de confirmação?</h2>
-      <div class="channels">
-        <button type="button" class="channel" data-canal="email"><b>E-mail</b><span id="canal-email-destino"></span></button>
-        <button type="button" class="channel" data-canal="whatsapp"><b>WhatsApp</b><span id="canal-whats-destino"></span></button>
-      </div>
-      <p class="form-error" id="erro-canal" role="alert" hidden></p>
-      <button type="button" class="link-button" data-voltar="dados">← Corrigir meus dados</button>
-    </section>
-
-    <!-- Passo 3: código -->
+    <!-- Passo 2: código enviado por e-mail -->
     <section class="step" data-step="codigo" hidden>
       <h2>Digite o código</h2>
       <p class="step-text" id="codigo-texto"></p>
@@ -66,7 +55,7 @@
         <button class="button primary wide" type="submit">Prosseguir</button>
       </form>
       <p class="resend"><button type="button" class="link-button" id="reenviar">Não recebeu o código? Clique aqui para enviar de novo</button><span id="reenviar-espera" hidden></span></p>
-      <button type="button" class="link-button muted" data-voltar="canal">Trocar a forma de envio</button>
+      <button type="button" class="link-button muted" data-voltar="dados">← Corrigir meu e-mail</button>
     </section>
 
     <!-- Passo extra: completar cadastro de quem entrou com Google -->

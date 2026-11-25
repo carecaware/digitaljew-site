@@ -7,7 +7,7 @@ create table if not exists clientes (
   email text,
   whatsapp text,
   origem text,                -- "onde ouviu falar de nós"
-  metodo text check (metodo in ('email', 'whatsapp', 'google')),  -- como confirmou o cadastro
+  metodo text check (metodo in ('email', 'google')),  -- como confirmou o cadastro
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
