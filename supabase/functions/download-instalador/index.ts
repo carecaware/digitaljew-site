@@ -1,18 +1,21 @@
 // Edge Function: download-instalador
-// Entrega o instalador mais novo do BarFácil a clientes LOGADOS e CADASTRADOS, a partir das
-// releases do repositório PRIVADO do GitHub (padrão: carecaware/releases).
+// Lê as releases do repositório PRIVADO do GitHub (padrão: carecaware/releases) e:
+//   - entrega o instalador mais novo do BarFácil a clientes LOGADOS e CADASTRADOS;
+//   - entrega a QUALQUER visitante as notas das versões (seção Novidades da página inicial).
 //
-// Corpo:    { plataforma: "windows" | "mobile", acao: "info" | "baixar" }
-// Resposta: info   -> { ok: true, arquivo: { nome, tamanho, data, versao } }  (arquivo: null se não houver)
-//           baixar -> { ok: true, url }  link temporário do GitHub (vale poucos minutos)
-//           erro   -> { ok: false, motivo }  nao_autenticado | sem_cadastro | requisicao_invalida
-//                                            | nao_configurado | sem_arquivo | github_indisponivel
+// Corpo:    { acao: "novidades" }                                   (público, sem login)
+//           { plataforma: "windows" | "mobile", acao: "info" | "baixar" }   (exige login e cadastro)
+// Resposta: novidades -> { ok: true, versoes: [{ tag_name, name, body, published_at, assets: [{ name }] }] }
+//           info      -> { ok: true, arquivo: { nome, tamanho, data, versao } }  (arquivo: null se não houver)
+//           baixar    -> { ok: true, url }  link temporário do GitHub (vale poucos minutos)
+//           erro      -> { ok: false, motivo }  nao_autenticado | sem_cadastro | requisicao_invalida
+//                                               | nao_configurado | sem_arquivo | github_indisponivel
 //
 // Segredos (Supabase -> Edge Functions -> Secrets):
 //   GITHUB_TOKEN     token do GitHub só de LEITURA no repositório de releases (Contents: Read-only)
 //   RELEASES_REPO    opcional; padrão "carecaware/releases"
-// Implantação (COM verificação de login, que é o padrão):
-//   supabase functions deploy download-instalador
+// Implantação (o login é conferido aqui dentro, porque as Novidades são públicas):
+//   supabase functions deploy download-instalador --no-verify-jwt
 // Depende da função eh_cliente() (supabase/downloads-e-chaves.sql).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -29,12 +32,36 @@ const EXT: Record<string, RegExp> = { windows: /\.(exe|msi)$/i, mobile: /\.apk$/
 const GH = "https://api.github.com";
 
 type Asset = { id: number; name: string; size: number; updated_at: string };
-type Release = { tag_name: string; name: string | null; draft: boolean; prerelease: boolean; published_at: string | null; assets: Asset[] };
+type Release = { tag_name: string; name: string | null; body?: string | null; draft: boolean; prerelease: boolean; published_at: string | null; assets: Asset[] };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const { plataforma, acao = "info" } = await req.json().catch(() => ({}));
+    const token = Deno.env.get("GITHUB_TOKEN");
+    const repo = Deno.env.get("RELEASES_REPO") || "carecaware/releases";
+    const ghHeaders = { Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "digitaljew-site" };
+    const lerReleases = async (): Promise<Release[] | null> => {
+      const r = await fetch(`${GH}/repos/${repo}/releases?per_page=20`, { headers: { ...ghHeaders, Accept: "application/vnd.github+json" } });
+      if (!r.ok) { console.error("github releases", r.status, await r.text()); return null; }
+      return ((await r.json()) as Release[]).filter((x) => !x.draft && !x.prerelease)
+        .sort((a, b) => String(b.published_at).localeCompare(String(a.published_at)));
+    };
+
+    // Novidades: públicas (só as notas e os nomes dos arquivos; nada que permita baixar)
+    if (acao === "novidades") {
+      if (!token) return json({ ok: false, motivo: "nao_configurado" }, 500);
+      const rels = await lerReleases();
+      if (!rels) return json({ ok: false, motivo: "github_indisponivel" }, 502);
+      const versoes = rels.slice(0, 12).map((x) => ({
+        tag_name: x.tag_name, name: x.name, body: (x.body || "").slice(0, 4000), published_at: x.published_at,
+        assets: x.assets.map((a) => ({ name: a.name })),
+      }));
+      return new Response(JSON.stringify({ ok: true, versoes }), {
+        headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "public, max-age=300" },
+      });
+    }
+
     if (!EXT[plataforma] || !["info", "baixar"].includes(acao)) return json({ ok: false, motivo: "requisicao_invalida" }, 400);
 
     // 1) quem está pedindo: precisa estar logado e ter cadastro completo
@@ -50,17 +77,11 @@ Deno.serve(async (req) => {
     if (!cliente) return json({ ok: false, motivo: "sem_cadastro" }, 403);
 
     // 2) release mais nova com um arquivo desta plataforma
-    const token = Deno.env.get("GITHUB_TOKEN");
     if (!token) return json({ ok: false, motivo: "nao_configurado" }, 500);
-    const repo = Deno.env.get("RELEASES_REPO") || "carecaware/releases";
-    const ghHeaders = { Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "digitaljew-site" };
-    const r = await fetch(`${GH}/repos/${repo}/releases?per_page=20`, { headers: { ...ghHeaders, Accept: "application/vnd.github+json" } });
-    if (!r.ok) { console.error("github releases", r.status, await r.text()); return json({ ok: false, motivo: "github_indisponivel" }, 502); }
-    const releases = (await r.json()) as Release[];
+    const releases = await lerReleases();
+    if (!releases) return json({ ok: false, motivo: "github_indisponivel" }, 502);
     let achado: { rel: Release; asset: Asset } | null = null;
-    for (const rel of releases
-      .filter((x) => !x.draft && !x.prerelease)
-      .sort((a, b) => String(b.published_at).localeCompare(String(a.published_at)))) {
+    for (const rel of releases) {
       const asset = rel.assets.filter((a) => EXT[plataforma].test(a.name))
         .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
       if (asset) { achado = { rel, asset }; break; }

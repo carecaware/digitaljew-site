@@ -13,9 +13,9 @@ Site institucional e central de downloads do BarFácil. Site estático, sem etap
 A imagem oficial deve ficar em `assets/brand/digitaljew-logo.jpg`. Substitua esse arquivo para atualizar os pontos de uso; mantenha o mesmo caminho ou ajuste as referências no HTML.
 
 ## Downloads
-Os downloads ficam na área do cliente (veja "Downloads e chave de teste" abaixo). O `githubRepo` do `config.js` só alimenta a seção Novidades da página inicial, que lê as notas das releases pela API pública: com o repositório privado, a seção mostra um aviso neutro.
+Os downloads ficam na área do cliente (veja "Downloads e chave de teste" abaixo). A seção **Novidades** da página inicial mostra as notas das 12 versões mais recentes do `carecaware/releases`, entregues pela mesma função `download-instalador` (esta parte é pública e não exige login). As notas vêm do texto de cada release, que o `release.yml` do app preenche com a seção da versão no `CHANGELOG.md`.
 
-Atualmente está configurado `carecaware/releases`. Se as releases forem publicadas em outro repositório, altere `githubRepo` em `config.js`.
+O repositório usado é o `carecaware/releases`. Para trocar, crie no Supabase o segredo `RELEASES_REPO` com o novo `dono/repositorio`.
 
 ## Publicação
 Pode ser hospedado no GitHub Pages, Vercel ou qualquer hospedagem estática. Nenhum Node.js é necessário.
@@ -60,5 +60,5 @@ Para baixar o app é preciso ter conta. Os botões "Baixar" do site levam para `
 - **Configuração, nesta ordem:** `clientes.sql` → `licencas-cliente.sql` → `migration-008.sql` (repositório do app) → `downloads-e-chaves.sql`. Depois, implante de novo a função `validate-license` (repositório do app) e implante a `download-instalador` (deste repositório):
   1. Crie um token *fine-grained* no GitHub com acesso **só** ao `carecaware/releases` e permissão **Contents: Read-only**.
   2. No Supabase, em *Edge Functions → Secrets*, crie o segredo `GITHUB_TOKEN` com esse token.
-  3. `supabase functions deploy download-instalador` (com a verificação de login ligada, que é o padrão).
+  3. `supabase functions deploy download-instalador --no-verify-jwt` (a própria função confere o login nos downloads; as Novidades são públicas).
   4. No repositório do app, em *Settings → Secrets and variables → Actions*, crie o segredo `RELEASES_TOKEN` com outro token *fine-grained* só do `carecaware/releases`, com **Contents: Read and write** (é o que publica as versões).

@@ -1,6 +1,6 @@
-/* Configure o repositório público que hospeda as GitHub Releases do BarFácil. */
+/* Configuração do site. Os instaladores e as notas das versões vêm das releases do repositório
+   privado carecaware/releases, pela função download-instalador do Supabase (ver README). */
 window.DIGITALJEW_CONFIG = {
-  githubRepo: "carecaware/releases",
   productName: "BarFácil",
   windowsAssetPattern: /\.(exe|msi)$/i,
   androidAssetPattern: /\.apk$/i,

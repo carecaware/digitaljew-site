@@ -1,16 +1,19 @@
 (() => {
-  const config=window.DIGITALJEW_CONFIG||{}, repo=config.githubRepo;
-  const api=`https://api.github.com/repos/${repo}/releases?per_page=12`;
+  const config=window.DIGITALJEW_CONFIG||{};
+  // Novidades vêm da função download-instalador do Supabase, que lê as releases privadas do GitHub.
+  const api=config.supabaseUrl ? `${config.supabaseUrl}/functions/v1/download-instalador` : '';
   const $=id=>document.getElementById(id);
   const date=v=>new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'long',year:'numeric'}).format(new Date(v));
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  // Novidades: notas das versões publicadas no GitHub. O download fica na área do cliente.
+  // Novidades: notas das versões publicadas. O download fica na área do cliente.
   async function load(){
     const vazio='<div class="empty-state">As novidades de cada versão aparecem aqui assim que forem publicadas.</div>';
     try{
-      const res=await fetch(api,{headers:{Accept:'application/vnd.github+json'}});
-      if(!res.ok)throw new Error('HTTP '+res.status);
-      const releases=await res.json();
+      if(!api)throw new Error('sem configuração');
+      const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json',apikey:config.supabaseKey,Authorization:'Bearer '+config.supabaseKey},body:JSON.stringify({acao:'novidades'})});
+      const j=await res.json();
+      if(!res.ok||!j.ok)throw new Error(j.motivo||('HTTP '+res.status));
+      const releases=j.versoes||[];
       if(!releases.length){$('release-list').innerHTML=vazio;return;}
       list(releases);
     }catch(e){ $('release-list').innerHTML=vazio; }
