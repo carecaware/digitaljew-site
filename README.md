@@ -1,5 +1,8 @@
 # DigitalJew Software — Portal
 
+> **Para colocar tudo no ar, siga a lista [CONFIGURAR-SUPABASE.md](CONFIGURAR-SUPABASE.md).**
+
+
 Site institucional e central de downloads do BarFácil. Site estático, sem etapa de build.
 
 ## Estrutura
