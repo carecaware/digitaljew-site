@@ -7,9 +7,13 @@
   let user = null, saindo = false;
 
   const PLANOS = { teste: 'Teste', basica: 'Básica', premium: 'Premium' };
-  const PLATAFORMAS = { windows: 'Windows (computador)', mobile: 'Mobile (celular Android)' };
-  const STATUS = { ativa: 'Ativa', teste: 'Em teste', atrasada: 'Pagamento pendente', cancelada: 'Cancelada' };
-  const dataLonga = d => new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(d));
+  const PLATAFORMAS = { windows: 'Windows (computador)', mobile: 'Mobile (celular Android)', web: 'Web (navegador)' };
+  const SITUACAO = {
+    ativa: 'Ativa', teste: 'Em teste', aguardando_ativacao: 'Aguardando ativação',
+    teste_encerrado: 'Teste encerrado', expirada: 'Expirada'
+  };
+  const PRECOS = cfg.precos || {};
+  const dataLonga = d => new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' }).format(new Date(d));
   const reais = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -26,32 +30,41 @@
   }
   window.addEventListener('hashchange', rota);
 
-  /* ---------- assinatura ---------- */
-  function cardAssinatura(a) {
-    const plano = PLANOS[a.plano] || a.plano;
-    const status = STATUS[a.status] || a.status || '';
-    const emTeste = a.plano === 'teste';
-    const dataRotulo = emTeste ? 'Fim do teste' : 'Próxima cobrança';
-    const dataValor = emTeste ? a.teste_termina_em : a.proxima_cobranca;
-    return `<article class="plan-card plan-${esc(a.plano)}">
-      <div class="plan-top"><span class="plan-label">PLANO ATUAL</span>${status ? `<span class="plan-status status-${esc(a.status)}">${esc(status)}</span>` : ''}</div>
-      <h2>BarFácil <span>${esc(plano)}</span></h2>
-      <dl class="plan-meta">
-        <div><dt>Versão do app</dt><dd>${esc(PLATAFORMAS[a.plataforma] || a.plataforma || '—')}</dd></div>
-        <div><dt>${dataRotulo}</dt><dd>${dataValor ? esc(dataLonga(dataValor)) : '—'}</dd></div>
-        <div><dt>Valor mensal</dt><dd>${a.valor_mensal != null && !emTeste ? esc(reais(a.valor_mensal)) : emTeste ? 'Grátis durante o teste' : '—'}</dd></div>
-      </dl>
+  /* ---------- assinatura: vem das licenças do app (função minhas_licencas no Supabase) ---------- */
+  function cardLicenca(l) {
+    const teste = l.plano === 'teste';
+    const encerrada = l.situacao === 'expirada' || l.situacao === 'teste_encerrado';
+    let dataRotulo, dataValor;
+    if (teste) {
+      dataRotulo = 'Fim do teste';
+      dataValor = l.teste_termina_em ? dataLonga(l.teste_termina_em)
+        : `${l.dias_teste} dias a partir da 1ª ativação`;
+    } else {
+      dataRotulo = 'Próxima cobrança';
+      dataValor = encerrada ? '—' : l.proxima_cobranca ? dataLonga(l.proxima_cobranca) : 'Começa quando o app for ativado';
+    }
+    const preco = encerrada ? null : teste ? 'Grátis durante o teste' : PRECOS[l.plano] != null ? reais(PRECOS[l.plano]) : null;
+    const aviso = l.volta_para_basica_em
+      ? `<p class="plan-note">Você pediu para voltar à versão Básica. O Premium vale até ${esc(dataLonga(l.volta_para_basica_em))}; depois disso o app passa para a Básica.</p>`
+      : l.situacao === 'teste_encerrado' ? '<p class="plan-note">Seu período de teste terminou. Fale com a gente para continuar usando o BarFácil.</p>'
+      : l.situacao === 'expirada' ? '<p class="plan-note">Esta licença expirou. Fale com a gente para renovar.</p>' : '';
+    return `<article class="plan-card plan-${esc(l.plano)}${encerrada ? ' plan-off' : ''}">
+      <div class="plan-top"><span class="plan-label">LICENÇA •••• ${esc(l.final_chave)}</span><span class="plan-status status-${esc(l.situacao)}">${esc(SITUACAO[l.situacao] || l.situacao)}</span></div>
+      <h2>BarFácil <span>${esc(PLANOS[l.plano] || l.plano)}</span></h2>
+      <dl class="plan-meta${preco ? '' : ' two'}">
+        <div><dt>Versão do app</dt><dd>${esc(PLATAFORMAS[l.plataforma] || l.plataforma || '—')}</dd></div>
+        <div><dt>${dataRotulo}</dt><dd>${esc(dataValor)}</dd></div>
+        ${preco ? `<div><dt>Valor mensal</dt><dd>${esc(preco)}</dd></div>` : ''}
+      </dl>${aviso}
     </article>`;
   }
 
   async function carregarAssinaturas() {
-    const { data, error } = await sb.from('assinaturas')
-      .select('plano, plataforma, status, proxima_cobranca, teste_termina_em, valor_mensal')
-      .order('created_at', { ascending: true });
+    const { data, error } = await sb.rpc('minhas_licencas');
     if (error) { console.error(error); return msg($('erro-assinatura'), 'Não foi possível carregar sua assinatura agora. Recarregue a página em instantes.'); }
-    const ativas = (data || []).filter(a => a.status !== 'cancelada');
-    $('assinaturas').innerHTML = ativas.map(cardAssinatura).join('');
-    $('sem-assinatura').hidden = ativas.length > 0;
+    const lista = data || [];
+    $('assinaturas').innerHTML = lista.map(cardLicenca).join('');
+    $('sem-assinatura').hidden = lista.length > 0;
   }
 
   /* ---------- meus dados ---------- */

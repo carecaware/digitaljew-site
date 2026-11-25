@@ -153,3 +153,11 @@ body.no-scroll{overflow:hidden}
   .plan-meta{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){.drawer,.drawer-backdrop{transition:none}}
+
+/* Licenças na área do cliente */
+.plan-meta.two{grid-template-columns:repeat(2,1fr)}
+.plan-note{margin:20px 0 0;padding:12px 14px;border-left:2px solid var(--gold);background:#f8c05812;color:#e6d3a6;font-size:12.5px;line-height:1.6}
+.plan-off{opacity:.7}
+.status-aguardando_ativacao,.status-teste_encerrado{border-color:#f8c05888;color:var(--gold)}
+.status-expirada{border-color:#ff7a7a88;color:var(--red)}
+@media(max-width:850px){.plan-meta.two{grid-template-columns:1fr}}

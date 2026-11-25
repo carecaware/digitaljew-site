@@ -12,5 +12,8 @@ window.DIGITALJEW_CONFIG = {
   /* Precisa bater com a validade configurada no Supabase (Authentication → Providers → Email e Phone). */
   codeTtlMinutes: 10,
   /* Intervalo mínimo entre pedidos de código (o padrão do Supabase é 60 s). */
-  resendCooldownSeconds: 60
+  resendCooldownSeconds: 60,
+
+  /* Valor mensal mostrado na área do cliente (deixe null para não mostrar). Ex.: basica: 29.90 */
+  precos: { basica: null, premium: null }
 };
