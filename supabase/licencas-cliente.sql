@@ -12,6 +12,12 @@
 alter table licenses add column if not exists cliente_id uuid references clientes(id) on delete set null;
 create index if not exists licenses_cliente_idx on licenses(cliente_id);
 
+-- Estabelecimento (ver estabelecimentos.sql) e cancelamento pelo próprio cliente.
+alter table licenses add column if not exists estabelecimento_id uuid;
+alter table licenses add column if not exists cancelada_em timestamptz;          -- quando o cliente cancelou
+alter table licenses add column if not exists cancelada_ate timestamptz;         -- até quando ainda pode usar
+alter table licenses add column if not exists expira_antes_do_cancelamento timestamptz; -- para desfazer sem perder uma validade antiga
+
 -- Nome que veio da conta Google no primeiro login (provisório: o cliente confirma o nome dele no
 -- cadastro, e esse fica em customer_name). Fica vazio para quem se cadastra por e-mail.
 alter table licenses add column if not exists client_temp_name text;
@@ -59,64 +65,126 @@ begin
   return null;
 end $$;
 
+-- A licença é deste cliente? (pelo cliente_id ou, se ainda não ligada, pelo e-mail da conta)
+create or replace function eh_minha_licenca(lic licenses) returns boolean
+language sql stable security definer set search_path = public as $$
+  select auth.uid() is not null and (lic.cliente_id = auth.uid()
+    or (lic.cliente_id is null and lower(trim(lic.customer_contact)) = lower(auth.jwt() ->> 'email')));
+$$;
+revoke all on function eh_minha_licenca(licenses) from public, anon, authenticated;
+
+-- Início da cobrança: 1ª ativação (premium/básica) ou uso da chave premium (mesma regra do app)
+create or replace function inicio_cobranca(lic licenses) returns timestamptz
+language sql stable security definer set search_path = public as $$
+  select case
+    when lic.tier <> 'premium' and exists (select 1 from premium_keys p where p.license_id = lic.id and not p.revoked)
+      then coalesce((select min(p.redeemed_at) from premium_keys p where p.license_id = lic.id and not p.revoked),
+                    (select min(a.activated_at) from license_activations a where a.license_id = lic.id))
+    else (select min(a.activated_at) from license_activations a where a.license_id = lic.id) end;
+$$;
+revoke all on function inicio_cobranca(licenses) from public, anon, authenticated;
+
 drop function if exists minhas_licencas();
 create function minhas_licencas()
 returns table (
+  id uuid,                          -- identificador interno (para cancelar, reverter e ligar a um estabelecimento)
   final_chave text,                 -- últimos 4 caracteres da chave, para o cliente reconhecer
   plataforma text,                  -- windows | mobile | web
   plano text,                       -- teste | basica | premium
-  situacao text,                    -- ativa | teste | aguardando_ativacao | teste_encerrado | expirada
+  situacao text,                    -- ativa | cancelada | teste | aguardando_ativacao | teste_encerrado | expirada
   dias_teste int,
   teste_termina_em timestamptz,
   proxima_cobranca timestamptz,
   volta_para_basica_em timestamptz, -- o cliente pediu para voltar à Básica (premium até essa data)
-  ativada boolean
+  ativada boolean,
+  cancelada_ate timestamptz,        -- cancelada: pode usar até essa data (dá para reverter até lá)
+  pode_cancelar boolean,
+  estabelecimento_id uuid
 )
 language sql stable security definer set search_path = public as $$
   with l as (
     select lic.*,
       (select min(a.activated_at) from license_activations a where a.license_id = lic.id) as primeira_ativacao,
-      (select min(p.redeemed_at) from premium_keys p where p.license_id = lic.id and not p.revoked) as premium_desde,
-      exists (select 1 from premium_keys p where p.license_id = lic.id and not p.revoked) as tem_chave_premium
+      exists (select 1 from premium_keys p where p.license_id = lic.id and not p.revoked) as tem_chave_premium,
+      inicio_cobranca(lic) as cobranca_desde
     from licenses lic
-    where auth.uid() is not null
-      and not lic.revoked
-      and (lic.cliente_id = auth.uid()
-           or (lic.cliente_id is null
-               and lower(trim(lic.customer_contact)) = lower(auth.jwt() ->> 'email')))
+    where not lic.revoked and eh_minha_licenca(lic)
   ), c as (
     select l.*,
       l.trial_days is not null as teste,
       l.expires_at is not null and l.expires_at < now() as vencida,
+      l.cancelada_ate is not null and l.cancelada_ate > now() as cancelada,
       case when (l.tier = 'premium' or l.tem_chave_premium)
                 and not (l.downgrade_at is not null and l.downgrade_at <= now())
-           then 'premium' else 'basica' end as plano_pago,
-      -- início da cobrança: ativação (premium/básica) ou uso da chave premium
-      case when l.tier <> 'premium' and l.tem_chave_premium then coalesce(l.premium_desde, l.primeira_ativacao)
-           else l.primeira_ativacao end as cobranca_desde
+           then 'premium' else 'basica' end as plano_pago
     from l
   )
   select
+    c.id,
     right(c.license_key, 4),
     c.platform,
     case when c.teste then 'teste' else c.plano_pago end,
     case when c.teste and c.expires_at is null then 'aguardando_ativacao'
          when c.vencida and c.teste then 'teste_encerrado'
          when c.vencida then 'expirada'
+         when c.cancelada then 'cancelada'
          when c.teste then 'teste'
          else 'ativa' end,
     c.trial_days,
     case when c.teste then c.expires_at end,
-    case when c.teste or c.vencida or c.cobranca_desde is null then null
+    case when c.teste or c.vencida or c.cancelada or c.cobranca_desde is null then null
          else proxima_data_cobranca(c.cobranca_desde) end,
-    case when not c.teste and c.downgrade_at > now() then c.downgrade_at end,
-    c.primeira_ativacao is not null
+    case when not c.teste and not c.cancelada and c.downgrade_at > now() then c.downgrade_at end,
+    c.primeira_ativacao is not null,
+    case when c.cancelada then c.cancelada_ate end,
+    not c.teste and not c.vencida and not c.cancelada,
+    c.estabelecimento_id
   from c
   order by c.created_at;
 $$;
 
 revoke all on function minhas_licencas() from public, anon;
 grant execute on function minhas_licencas() to authenticated;
+
+-- Cancelar: a assinatura continua valendo até o fim do período já pago (a próxima data de cobrança)
+-- e depois o app para de funcionar. Licença paga que nunca foi ativada termina na hora.
+-- Devolve a data final. Erros: nao_encontrada | nao_pode_cancelar
+create or replace function cancelar_assinatura(p_licenca uuid) returns timestamptz
+language plpgsql volatile security definer set search_path = public as $$
+declare lic licenses%rowtype; fim timestamptz; ini timestamptz;
+begin
+  select * into lic from licenses where id = p_licenca for update;
+  if not found or lic.revoked or not eh_minha_licenca(lic) then raise exception 'nao_encontrada'; end if;
+  if lic.trial_days is not null or (lic.expires_at is not null and lic.expires_at < now())
+     or (lic.cancelada_ate is not null and lic.cancelada_ate > now()) then raise exception 'nao_pode_cancelar'; end if;
+  ini := inicio_cobranca(lic);
+  fim := case when ini is null then now() else proxima_data_cobranca(ini) end;
+  if lic.expires_at is not null and lic.expires_at < fim then fim := lic.expires_at; end if;
+  update licenses set cancelada_em = now(), cancelada_ate = fim,
+         expira_antes_do_cancelamento = lic.expires_at, expires_at = fim
+  where id = lic.id;
+  return fim;
+end $$;
+
+-- Reverter: só enquanto ainda está dentro do período (antes da data final). Volta tudo como era.
+-- Erros: nao_encontrada | nao_esta_cancelada
+create or replace function reverter_cancelamento(p_licenca uuid) returns boolean
+language plpgsql volatile security definer set search_path = public as $$
+declare lic licenses%rowtype;
+begin
+  select * into lic from licenses where id = p_licenca for update;
+  if not found or lic.revoked or not eh_minha_licenca(lic) then raise exception 'nao_encontrada'; end if;
+  if lic.cancelada_ate is null or lic.cancelada_ate <= now() then raise exception 'nao_esta_cancelada'; end if;
+  update licenses set expires_at = lic.expira_antes_do_cancelamento, expira_antes_do_cancelamento = null,
+         cancelada_em = null, cancelada_ate = null
+  where id = lic.id;
+  return true;
+end $$;
+
+revoke all on function cancelar_assinatura(uuid) from public, anon;
+revoke all on function reverter_cancelamento(uuid) from public, anon;
+grant execute on function cancelar_assinatura(uuid) to authenticated;
+grant execute on function reverter_cancelamento(uuid) to authenticated;
 
 -- A tabela "assinaturas" da versão anterior não é mais usada pelo site. Se você chegou a criá-la
 -- e não tem nada nela, pode apagar com:  drop table if exists assinaturas;

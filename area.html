@@ -24,6 +24,7 @@
       </div>
       <nav class="area-nav" aria-label="Menu da área do cliente">
         <a href="#assinatura" data-view="assinatura">Assinatura</a>
+        <a href="#estabelecimentos" data-view="estabelecimentos">Meus estabelecimentos</a>
         <a href="#downloads" data-view="downloads">Downloads</a>
         <a href="#pagamento" data-abrir-pagamento>Dados de pagamento</a>
         <a href="#meus-dados" data-view="meus-dados">Meus dados</a>
@@ -43,12 +44,30 @@
           <a class="button primary" href="#downloads">Baixar o BarFácil ↓</a>
         </div>
         <p class="form-error" id="erro-assinatura" role="alert" hidden></p>
+        <p class="form-ok" id="ok-assinatura" role="status" hidden></p>
         <a class="area-pay-link" href="#pagamento" data-abrir-pagamento>Dados de pagamento <span aria-hidden="true">→</span></a>
+      </section>
+
+      <!-- Meus estabelecimentos -->
+      <section class="area-view" data-view="estabelecimentos" hidden>
+        <div class="kicker">02 / MEUS ESTABELECIMENTOS</div>
+        <h1>Meus estabelecimentos</h1>
+        <p class="area-lead">Tem mais de um bar, pizzaria ou adega? Cadastre cada um aqui e organize as assinaturas do BarFácil de cada estabelecimento.</p>
+        <form id="form-estab" class="estab-form" novalidate>
+          <label class="field"><span>Nome do estabelecimento</span><input name="titulo" maxlength="80" placeholder="Ex.: Bar do Zé – Centro" required></label>
+          <label class="field"><span>Endereço <em class="opcional">(opcional)</em></span><input name="endereco" maxlength="200" autocomplete="street-address" placeholder="Rua, número, bairro, cidade"></label>
+          <label class="field"><span>Tipo</span><select name="tipo" required><option value="">Selecione</option><option>Bar/pub</option><option>Boteco</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Casa noturna</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option></select></label>
+          <div class="estab-form-acao"><button class="button primary" type="submit">Adicionar</button></div>
+          <p class="form-error" id="erro-estab" role="alert" hidden></p>
+        </form>
+        <p class="form-ok" id="ok-estab" role="status" hidden></p>
+        <div id="estabs" class="estab-grid"></div>
+        <p class="area-note" id="sem-estab" hidden>Você ainda não cadastrou nenhum estabelecimento.</p>
       </section>
 
       <!-- Downloads -->
       <section class="area-view" data-view="downloads" hidden>
-        <div class="kicker">02 / DOWNLOADS</div>
+        <div class="kicker">03 / DOWNLOADS</div>
         <h1>Baixar o BarFácil</h1>
         <p class="area-lead">Baixe, instale e ative com a sua chave. A chave de teste libera <strong>7 dias grátis</strong>, contados a partir da primeira ativação. Cada computador ou celular pode usar o período de teste uma única vez.</p>
         <div class="dl-grid">
@@ -79,7 +98,7 @@
 
       <!-- Meus dados -->
       <section class="area-view" data-view="meus-dados" hidden>
-        <div class="kicker">03 / MEUS DADOS</div>
+        <div class="kicker">04 / MEUS DADOS</div>
         <h1>Meus dados</h1>
         <form id="form-perfil" class="area-form" novalidate>
           <label class="field"><span>Nome completo</span><input name="nome" autocomplete="name" required></label>
@@ -107,6 +126,37 @@
     </div>
   </div>
 </main>
+
+<!-- Janela de confirmação (cancelar assinatura, remover estabelecimento) -->
+<div class="modal-fundo" id="confirmar-fundo" hidden></div>
+<div class="modal" id="confirmar" role="alertdialog" aria-modal="true" aria-labelledby="confirmar-titulo" aria-describedby="confirmar-texto" hidden>
+  <h2 id="confirmar-titulo"></h2>
+  <p class="step-text" id="confirmar-texto"></p>
+  <div class="modal-acoes">
+    <button type="button" class="button" id="confirmar-nao"></button>
+    <button type="button" class="button perigo" id="confirmar-sim"></button>
+  </div>
+</div>
+
+<!-- Janela de compra (Pix pela Asaas: integração depois) -->
+<div class="modal-fundo" id="adquirir-fundo" hidden></div>
+<div class="modal" id="adquirir" role="dialog" aria-modal="true" aria-labelledby="adquirir-titulo" hidden>
+  <button type="button" class="modal-fechar" data-fechar-adquirir aria-label="Fechar">×</button>
+  <h2 id="adquirir-titulo">Adquirir BarFácil</h2>
+  <p class="step-text" id="adquirir-para"></p>
+  <form id="form-adquirir" novalidate>
+    <fieldset class="opcoes"><legend>Plano</legend>
+      <label class="opcao"><input type="radio" name="plano" value="basica" checked><span><b>Básica</b><small data-preco="basica"></small></span></label>
+      <label class="opcao"><input type="radio" name="plano" value="premium"><span><b>Premium</b><small data-preco="premium"></small></span></label>
+    </fieldset>
+    <fieldset class="opcoes"><legend>Onde vai usar</legend>
+      <label class="opcao"><input type="radio" name="plataforma" value="windows" checked><span><b>Windows</b><small>Computador do caixa</small></span></label>
+      <label class="opcao"><input type="radio" name="plataforma" value="mobile"><span><b>Android</b><small>Celular ou tablet</small></span></label>
+    </fieldset>
+    <p class="dnotice dark" id="aviso-adquirir" role="status" hidden></p>
+    <button class="button primary wide" type="submit">Pagar com Pix</button>
+  </form>
+</div>
 
 <!-- Painel lateral branco: dados de pagamento -->
 <div class="drawer-backdrop" id="pagamento-fundo" hidden></div>

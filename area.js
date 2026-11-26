@@ -1,4 +1,4 @@
-/* Área interna do cliente: assinatura, dados de pagamento e meus dados.
+/* Área interna do cliente: assinatura, estabelecimentos, downloads, dados de pagamento e meus dados.
  * Só abre para quem está logado; o login fica guardado até o cliente clicar em "Sair" (ver conta.js). */
 (() => {
   const { cfg, sb, digits, maskPhone, phoneE164, validPhone, msg, busy, ligarMedidor } = window.DJ;
@@ -10,8 +10,10 @@
   const PLATAFORMAS = { windows: 'Windows (computador)', mobile: 'Mobile (celular Android)', web: 'Web (navegador)' };
   const SITUACAO = {
     ativa: 'Ativa', teste: 'Em teste', aguardando_ativacao: 'Aguardando ativação',
-    teste_encerrado: 'Teste encerrado', expirada: 'Expirada'
+    teste_encerrado: 'Teste encerrado', expirada: 'Expirada', cancelada: 'Cancelada'
   };
+  let licencas = [], estabs = [];
+  const nomeEstab = id => (estabs.find(e => e.id === id) || {}).titulo;
   const PRECOS = cfg.precos || {};
   const dataLonga = d => new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' }).format(new Date(d));
   const reais = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -48,33 +50,202 @@
       dataRotulo = 'Fim do teste';
       dataValor = l.teste_termina_em ? dataLonga(l.teste_termina_em)
         : `${l.dias_teste} dias a partir da 1ª ativação`;
+    } else if (l.situacao === 'cancelada') {
+      dataRotulo = 'Pode usar até';
+      dataValor = dataLonga(l.cancelada_ate);
     } else {
       dataRotulo = 'Próxima cobrança';
       dataValor = encerrada ? '—' : l.proxima_cobranca ? dataLonga(l.proxima_cobranca) : 'Começa quando o app for ativado';
     }
-    const preco = encerrada ? null : teste ? 'Grátis durante o teste' : PRECOS[l.plano] != null ? reais(PRECOS[l.plano]) : null;
-    const aviso = l.volta_para_basica_em
+    const preco = encerrada || l.situacao === 'cancelada' ? null : teste ? 'Grátis durante o teste' : PRECOS[l.plano] != null ? reais(PRECOS[l.plano]) : null;
+    const aviso = l.situacao === 'cancelada'
+      ? `<p class="plan-note">Assinatura cancelada. Você ainda pode usar o BarFácil até <strong>${esc(dataLonga(l.cancelada_ate))}</strong>; depois disso o app para de funcionar. Mudou de ideia? Dá para reverter até essa data.</p>`
+      : l.volta_para_basica_em
       ? `<p class="plan-note">Você pediu para voltar à versão Básica. O Premium vale até ${esc(dataLonga(l.volta_para_basica_em))}; depois disso o app passa para a Básica.</p>`
       : l.situacao === 'teste_encerrado' ? '<p class="plan-note">Seu período de teste terminou. Fale com a gente para continuar usando o BarFácil.</p>'
       : l.situacao === 'expirada' ? '<p class="plan-note">Esta licença expirou. Fale com a gente para renovar.</p>' : '';
-    return `<article class="plan-card plan-${esc(l.plano)}${encerrada ? ' plan-off' : ''}">
+    return `<article class="plan-card plan-${esc(l.plano)}${encerrada ? ' plan-off' : ''}${l.situacao === 'cancelada' ? ' plan-cancelada' : ''}">
       <div class="plan-top"><span class="plan-label">LICENÇA •••• ${esc(l.final_chave)}</span><span class="plan-status status-${esc(l.situacao)}">${esc(SITUACAO[l.situacao] || l.situacao)}</span></div>
       <h2>BarFácil <span>${esc(PLANOS[l.plano] || l.plano)}</span></h2>
       <dl class="plan-meta${preco ? '' : ' two'}">
         <div><dt>Versão do app</dt><dd>${esc(PLATAFORMAS[l.plataforma] || l.plataforma || '—')}</dd></div>
         <div><dt>${dataRotulo}</dt><dd>${esc(dataValor)}</dd></div>
         ${preco ? `<div><dt>Valor mensal</dt><dd>${esc(preco)}</dd></div>` : ''}
-      </dl>${aviso}
+      </dl>${aviso}${l.estabelecimento_id && nomeEstab(l.estabelecimento_id) ? `<p class="plan-estab">Estabelecimento: <a href="#estabelecimentos" data-view="estabelecimentos">${esc(nomeEstab(l.estabelecimento_id))}</a></p>` : ''}${acoesLicenca(l)}
     </article>`;
   }
 
-  async function carregarAssinaturas() {
-    const { data, error } = await sb.rpc('minhas_licencas');
-    if (error) { console.error(error); return msg($('erro-assinatura'), 'Não foi possível carregar sua assinatura agora. Recarregue a página em instantes.'); }
-    const lista = data || [];
-    $('assinaturas').innerHTML = lista.map(cardLicenca).join('');
-    $('sem-assinatura').hidden = lista.length > 0;
+  function acoesLicenca(l) {
+    if (l.situacao === 'cancelada') return `<div class="plan-acoes"><button type="button" class="link-button" data-reverter="${esc(l.id)}">Reverter cancelamento</button></div>`;
+    if (l.pode_cancelar) return `<div class="plan-acoes"><button type="button" class="link-button perigo" data-cancelar="${esc(l.id)}">Cancelar assinatura</button></div>`;
+    return '';
   }
+
+  async function carregarAssinaturas() {
+    const [r1, r2] = await Promise.all([sb.rpc('minhas_licencas'), sb.from('estabelecimentos').select('id, titulo, endereco, tipo, created_at').order('created_at')]);
+    if (r1.error) { console.error(r1.error); return msg($('erro-assinatura'), 'Não foi possível carregar sua assinatura agora. Recarregue a página em instantes.'); }
+    if (r2.error) console.error(r2.error);
+    licencas = r1.data || []; estabs = r2.data || [];
+    $('assinaturas').innerHTML = licencas.map(cardLicenca).join('');
+    $('sem-assinatura').hidden = licencas.length > 0;
+    renderEstabs();
+  }
+
+  /* ---------- janela de confirmação ---------- */
+  function confirmar({ titulo, texto, sim, nao = 'Voltar' }) {
+    return new Promise(resolve => {
+      const m = $('confirmar'), f = $('confirmar-fundo'), bSim = $('confirmar-sim'), bNao = $('confirmar-nao');
+      const antes = document.activeElement;
+      $('confirmar-titulo').textContent = titulo; $('confirmar-texto').innerHTML = texto;
+      bSim.textContent = sim; bNao.textContent = nao;
+      m.hidden = false; f.hidden = false; document.body.classList.add('no-scroll'); bNao.focus();
+      const fim = v => { m.hidden = true; f.hidden = true; document.body.classList.remove('no-scroll'); bSim.onclick = bNao.onclick = f.onclick = null; document.removeEventListener('keydown', esc_); if (antes) antes.focus({ preventScroll: true }); resolve(v); };
+      const esc_ = e => { if (e.key === 'Escape') fim(false); };
+      bSim.onclick = () => fim(true); bNao.onclick = () => fim(false); f.onclick = () => fim(false);
+      document.addEventListener('keydown', esc_);
+    });
+  }
+  const avisar = (texto, onde = 'ok-assinatura') => { msg($(onde), texto); setTimeout(() => msg($(onde), ''), 8000); };
+
+  /* ---------- cancelar e reverter (em Assinatura e em Meus estabelecimentos) ---------- */
+  document.addEventListener('click', async e => {
+    const bc = e.target.closest('[data-cancelar]'), br = e.target.closest('[data-reverter]');
+    if (!bc && !br) return;
+    const id = (bc || br).dataset[bc ? 'cancelar' : 'reverter'];
+    const l = licencas.find(x => x.id === id); if (!l) return;
+    const onde = e.target.closest('[data-view="estabelecimentos"]') ? 'ok-estab' : 'ok-assinatura';
+    const nome = `BarFácil ${PLANOS[l.plano] || l.plano} (licença •••• ${l.final_chave})`;
+    if (bc) {
+      const ate = l.ativada && l.proxima_cobranca;
+      const ok = await confirmar({
+        titulo: 'Cancelar assinatura?',
+        texto: ate
+          ? `O ${esc(nome)} continua funcionando até <strong>${esc(dataLonga(l.proxima_cobranca))}</strong>, o fim do período já pago. Não haverá nova cobrança. Até essa data, você pode reverter o cancelamento.`
+          : `Esta licença ainda não foi ativada em nenhum aparelho, então o cancelamento vale <strong>na hora</strong> e não poderá ser revertido.`,
+        sim: 'Cancelar assinatura', nao: 'Manter assinatura'
+      });
+      if (!ok) return;
+      busy(bc, true, 'Cancelando…');
+      const { data, error } = await sb.rpc('cancelar_assinatura', { p_licenca: id });
+      busy(bc, false);
+      if (error) { console.error(error); return avisar('Não foi possível cancelar agora. Tente de novo em instantes.', onde); }
+      await carregarAssinaturas();
+      avisar(new Date(data) > new Date() ? `Assinatura cancelada. Você pode usar o BarFácil até ${dataLonga(data)}.` : 'Assinatura cancelada.', onde);
+    } else {
+      busy(br, true, 'Revertendo…');
+      const { error } = await sb.rpc('reverter_cancelamento', { p_licenca: id });
+      busy(br, false);
+      if (error) { console.error(error); return avisar('Não foi possível reverter agora. Tente de novo em instantes.', onde); }
+      await carregarAssinaturas();
+      avisar(`Cancelamento revertido. O ${nome} continua ativo normalmente.`, onde);
+    }
+  });
+
+  /* ---------- Meus estabelecimentos ---------- */
+  const tipoLabel = t => String(t || '').toUpperCase();
+  function linhaLicenca(l) {
+    const estado = l.situacao === 'cancelada' ? `Cancelada · pode usar até ${dataLonga(l.cancelada_ate)}`
+      : l.plano === 'teste' ? (l.teste_termina_em ? `Teste até ${dataLonga(l.teste_termina_em)}` : 'Teste · aguardando ativação')
+      : l.situacao === 'expirada' ? 'Expirada'
+      : l.proxima_cobranca ? `Próxima cobrança em ${dataLonga(l.proxima_cobranca)}` : 'Começa quando o app for ativado';
+    return `<li class="estab-lic status-${esc(l.situacao)}">
+      <div><b>BarFácil ${esc(PLANOS[l.plano] || l.plano)}</b> · ${esc((PLATAFORMAS[l.plataforma] || l.plataforma).split(' (')[0])} · •••• ${esc(l.final_chave)}<span>${esc(estado)}</span></div>
+      <div class="estab-lic-acoes">${l.situacao === 'cancelada' ? `<button type="button" class="link-button" data-reverter="${esc(l.id)}">Reverter</button>` : l.pode_cancelar ? `<button type="button" class="link-button perigo" data-cancelar="${esc(l.id)}">Cancelar</button>` : ''}<button type="button" class="link-button muted" data-desvincular="${esc(l.id)}">Desvincular</button></div>
+    </li>`;
+  }
+  function renderEstabs() {
+    const livres = licencas.filter(l => !l.estabelecimento_id && !['expirada', 'teste_encerrado'].includes(l.situacao));
+    $('estabs').innerHTML = estabs.map(e => {
+      const minhas = licencas.filter(l => l.estabelecimento_id === e.id);
+      return `<article class="estab-card" data-id="${esc(e.id)}">
+        <div class="estab-top">
+          <div><span class="estab-tipo">${esc(tipoLabel(e.tipo))}</span><h2>${esc(e.titulo)}</h2>${e.endereco ? `<p class="estab-end">${esc(e.endereco)}</p>` : ''}</div>
+          <button type="button" class="link-button muted" data-remover-estab="${esc(e.id)}">Remover</button>
+        </div>
+        ${minhas.length ? `<ul class="estab-lics">${minhas.map(linhaLicenca).join('')}</ul>` : '<p class="estab-vazio">Nenhuma assinatura neste estabelecimento ainda.</p>'}
+        ${livres.length ? `<label class="field estab-vincular"><span>Ligar uma licença que você já tem</span><select data-vincular="${esc(e.id)}"><option value="">Escolha a licença</option>${livres.map(l => `<option value="${esc(l.id)}">BarFácil ${esc(PLANOS[l.plano] || l.plano)} · ${esc((PLATAFORMAS[l.plataforma] || l.plataforma).split(' (')[0])} · •••• ${esc(l.final_chave)}</option>`).join('')}</select></label>` : ''}
+        <button type="button" class="button primary wide" data-adquirir="${esc(e.id)}">Adquirir BarFácil para este estabelecimento</button>
+      </article>`;
+    }).join('');
+    $('sem-estab').hidden = estabs.length > 0;
+  }
+
+  const fe = $('form-estab');
+  fe.addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('erro-estab'), titulo = fe.titulo.value.trim(), endereco = fe.endereco.value.trim();
+    if (!titulo) return msg(err, 'Dê um nome ao estabelecimento.'), fe.titulo.focus();
+    if (!fe.tipo.value) return msg(err, 'Escolha o tipo do estabelecimento.'), fe.tipo.focus();
+    msg(err, '');
+    const btn = fe.querySelector('button[type="submit"]');
+    busy(btn, true, 'Adicionando…');
+    const { error } = await sb.from('estabelecimentos').insert({ titulo, endereco: endereco || null, tipo: fe.tipo.value });
+    busy(btn, false);
+    if (error) { console.error(error); return msg(err, 'Não foi possível adicionar agora. Tente de novo.'); }
+    fe.reset();
+    await carregarAssinaturas();
+    avisar(`"${titulo}" adicionado.`, 'ok-estab');
+  });
+
+  $('estabs').addEventListener('change', async e => {
+    const sel = e.target.closest('[data-vincular]'); if (!sel || !sel.value) return;
+    sel.disabled = true;
+    const { error } = await sb.rpc('vincular_estabelecimento', { p_licenca: sel.value, p_estabelecimento: sel.dataset.vincular });
+    if (error) { console.error(error); sel.disabled = false; return avisar('Não foi possível ligar a licença agora. Tente de novo.', 'ok-estab'); }
+    await carregarAssinaturas();
+  });
+
+  $('estabs').addEventListener('click', async e => {
+    const des = e.target.closest('[data-desvincular]'), rem = e.target.closest('[data-remover-estab]'), adq = e.target.closest('[data-adquirir]');
+    if (des) {
+      busy(des, true, '…');
+      const { error } = await sb.rpc('vincular_estabelecimento', { p_licenca: des.dataset.desvincular, p_estabelecimento: null });
+      if (error) { busy(des, false); console.error(error); return avisar('Não foi possível desvincular agora.', 'ok-estab'); }
+      return carregarAssinaturas();
+    }
+    if (rem) {
+      const est = estabs.find(x => x.id === rem.dataset.removerEstab); if (!est) return;
+      const n = licencas.filter(l => l.estabelecimento_id === est.id).length;
+      const ok = await confirmar({ titulo: `Remover "${est.titulo}"?`, texto: n === 1 ? 'A assinatura ligada a ele <strong>continua valendo</strong>; só fica sem estabelecimento.' : n ? `As ${n} assinaturas ligadas a ele <strong>continuam valendo</strong>; só ficam sem estabelecimento.` : 'O estabelecimento sai da sua lista.', sim: 'Remover', nao: 'Voltar' });
+      if (!ok) return;
+      const { error } = await sb.from('estabelecimentos').delete().eq('id', est.id);
+      if (error) { console.error(error); return avisar('Não foi possível remover agora.', 'ok-estab'); }
+      await carregarAssinaturas();
+      return avisar(`"${est.titulo}" removido.`, 'ok-estab');
+    }
+    if (adq) abrirAdquirir(adq.dataset.adquirir);
+  });
+
+  /* ---------- adquirir BarFácil (pagamento por Pix pela Asaas: integração depois) ---------- */
+  const ja = $('adquirir'), jaFundo = $('adquirir-fundo'), fa = $('form-adquirir');
+  let compra = null, focoAntesCompra = null;
+  document.querySelectorAll('[data-preco]').forEach(el => { const v = PRECOS[el.dataset.preco]; el.textContent = v != null ? `${reais(v)} por mês` : 'Valor mensal a definir'; });
+  function abrirAdquirir(estabId) {
+    const est = estabs.find(x => x.id === estabId); if (!est) return;
+    compra = { estabelecimento_id: est.id }; focoAntesCompra = document.activeElement;
+    fa.reset(); msg($('aviso-adquirir'), '');
+    $('adquirir-para').textContent = `Para ${est.titulo}. Escolha o plano e onde o app vai ser usado.`;
+    ja.hidden = false; jaFundo.hidden = false; document.body.classList.add('no-scroll');
+    fa.querySelector('input[name=plano]:checked').focus();
+  }
+  function fecharAdquirir() {
+    if (ja.hidden) return;
+    ja.hidden = true; jaFundo.hidden = true; document.body.classList.remove('no-scroll');
+    if (focoAntesCompra) focoAntesCompra.focus({ preventScroll: true });
+  }
+  ja.querySelector('[data-fechar-adquirir]').addEventListener('click', fecharAdquirir);
+  jaFundo.addEventListener('click', fecharAdquirir);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharAdquirir(); });
+  /* Ponto de integração: troque por uma chamada à função que cria a cobrança Pix na Asaas
+     (cfg.pagamentos.pix) e mostre o QR Code; quando o pagamento for confirmado, a licença é criada
+     já ligada a este estabelecimento. */
+  fa.addEventListener('submit', async e => {
+    e.preventDefault();
+    const pedido = { ...compra, plano: fa.plano.value, plataforma: fa.plataforma.value };
+    const integ = (cfg.pagamentos || {}).pix;
+    if (typeof integ === 'function') return integ(pedido);
+    msg($('aviso-adquirir'), 'O pagamento por Pix está em integração. Em breve você conclui a compra por aqui, e a nova licença aparece neste estabelecimento automaticamente.');
+  });
 
   /* ---------- downloads: instaladores (releases privadas do GitHub) e chave de cada plataforma ---------- */
   // A função download-instalador do Supabase confere o login e devolve o arquivo mais novo

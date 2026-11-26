@@ -266,3 +266,50 @@ input[type=password]::-ms-reveal,input[type=password]::-ms-clear{display:none}
 .area-sub{font-size:22px;letter-spacing:-.03em;margin:44px 0 16px;padding-top:30px;border-top:1px solid var(--line);max-width:460px}
 .area-note{color:var(--muted);font-size:13px;line-height:1.7;max-width:460px}
 .area-form .button[type=submit]:disabled{opacity:.45;cursor:not-allowed}
+
+/* Cancelar / reverter assinatura */
+.plan-acoes{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);display:flex;gap:18px}
+.link-button.perigo{color:#ff8a8a}
+.plan-estab{margin:16px 0 0;font-size:12.5px;color:var(--muted)}
+.plan-estab a{color:var(--cyan)}
+.status-cancelada{border-color:#ff7a7a88;color:var(--red)}
+.plan-card.plan-cancelada{border-color:#ff7a7a55}
+
+/* Janelas: ações */
+.modal-acoes{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px}
+.modal-acoes .button{cursor:pointer;border:1px solid #58c0d066;background:none;color:var(--white)}
+.modal-acoes .button.perigo{background:#d94848;border-color:#d94848;color:#fff}
+.modal-acoes .button.perigo:hover{background:#c23d3d}
+.modal .step-text strong{color:var(--white)}
+.opcoes{border:0;padding:0;margin:0 0 18px}
+.opcoes legend{font-size:12px;font-weight:700;color:#d9e1e8;margin-bottom:8px}
+.opcao{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid #58c0d040;border-radius:4px;margin-bottom:8px;cursor:pointer;background:#172638}
+.opcao:has(input:checked){border-color:var(--cyan);background:#58c0d014}
+.opcao input{accent-color:var(--cyan);width:16px;height:16px;flex-shrink:0}
+.opcao span{display:flex;flex-direction:column}
+.opcao b{font-size:14px}
+.opcao small{font-size:12px;color:var(--muted)}
+.dnotice.dark{background:#f8c05814;color:#e6d3a6}
+
+/* Meus estabelecimentos */
+.estab-form{display:grid;grid-template-columns:1.2fr 1.5fr 1fr auto;gap:0 14px;align-items:end;border:1px solid var(--line);background:var(--panel);padding:20px 20px 4px;margin-bottom:12px}
+.estab-form .form-error{grid-column:1/-1}
+.estab-form-acao{margin-bottom:16px}
+.estab-form-acao .button{cursor:pointer;white-space:nowrap;padding:13px 22px}
+.estab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;margin-top:22px}
+.estab-card{border:1px solid #58c0d059;background:linear-gradient(115deg,#203247,#1d2d40);padding:24px;display:flex;flex-direction:column;gap:16px}
+.estab-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.estab-tipo{font:10px var(--mono);letter-spacing:.15em;color:var(--gold)}
+.estab-top h2{margin:6px 0 4px;font-size:22px;letter-spacing:-.03em}
+.estab-end{margin:0;font-size:12.5px;color:var(--muted)}
+.estab-lics{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.estab-lic{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}
+.estab-lic span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.estab-lic.status-cancelada span{color:#ff8a8a}
+.estab-lic-acoes{display:flex;gap:12px;flex-shrink:0}
+.estab-lic-acoes .link-button{font-size:12px}
+.estab-vazio{margin:0;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+.estab-vincular{margin:0}
+.estab-card .button.wide{margin-top:auto;cursor:pointer}
+@media(max-width:1100px){.estab-form{grid-template-columns:1fr 1fr}.estab-form-acao{grid-column:1/-1}}
+@media(max-width:650px){.estab-form{grid-template-columns:1fr}.estab-grid{grid-template-columns:1fr}.estab-lic{flex-direction:column}}

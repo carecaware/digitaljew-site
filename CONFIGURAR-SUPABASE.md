@@ -21,6 +21,8 @@ rodados mais de uma vez; se você rodou uma versão antiga, rode a atual por cim
   https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/migration-008.sql
 - [x] **1.4** `downloads-e-chaves.sql` (site) — chave de teste automática e permissão de download
   https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/downloads-e-chaves.sql
+- [x] **1.5** `estabelecimentos.sql` (site) — Meus estabelecimentos (rode depois do 1.4)
+  https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/estabelecimentos.sql
 
 **Limpeza (só se você rodou versões antigas):**
 - [ ] Tabela `assinaturas`, se existir e estiver vazia: `drop table if exists assinaturas;`
