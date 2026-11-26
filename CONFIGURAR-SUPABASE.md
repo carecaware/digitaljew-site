@@ -25,6 +25,8 @@ rodados mais de uma vez; se você rodou uma versão antiga, rode a atual por cim
   https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/migration-009.sql
 - [x] **1.5** `estabelecimentos.sql` (site) — Meus estabelecimentos (rode depois do 1.4)
   https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/estabelecimentos.sql
+- [x] **1.7** `migration-010.sql` (app) — aparelhos de garçom (vagas, conexão por código)
+  https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/migration-010.sql
 
 **Limpeza (só se você rodou versões antigas):**
 - [ ] Tabela `assinaturas`, se existir e estiver vazia: `drop table if exists assinaturas;`
@@ -47,6 +49,8 @@ rodados mais de uma vez; se você rodou uma versão antiga, rode a atual por cim
 
 - [x] **2.5** Função **`backup`** (app, nova): implantada com "Enforce JWT verification" **desligado**:
   https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/functions/backup/index.ts
+- [x] **2.6** Função **`aparelhos`** (app, nova): implantada com "Enforce JWT verification" **desligado**:
+  https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/functions/aparelhos/index.ts
 
 Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
 `supabase functions deploy download-instalador --no-verify-jwt` (na pasta do site) e
