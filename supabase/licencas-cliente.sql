@@ -47,12 +47,13 @@ drop trigger if exists clientes_nome_google on clientes;
 create trigger clientes_nome_google after insert on clientes
   for each row execute function clientes_nome_google_nas_licencas();
 
--- Próximo dia de cobrança: o mesmo dia do mês em que a cobrança começou (ajustado ao tamanho do
--- mês), contado no horário de Brasília. Mesma regra da função schedule-downgrade do app.
+-- Próximo dia de cobrança: o mesmo dia do mês em que a cobrança começou, contado no horário de
+-- Brasília. Quem começou no dia 29, 30 ou 31 vence sempre no dia 28 (assim o dia nunca muda).
+-- Mesma regra da função schedule-downgrade do app.
 create or replace function proxima_data_cobranca(desde timestamptz)
 returns timestamptz language plpgsql stable set search_path = public as $$
 declare
-  dia int := extract(day from desde at time zone 'America/Sao_Paulo');
+  dia int := least(28, extract(day from desde at time zone 'America/Sao_Paulo')::int);
   hoje date := (now() at time zone 'America/Sao_Paulo')::date;
   mes date := date_trunc('month', hoje)::date;
   d date;
