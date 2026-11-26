@@ -47,12 +47,12 @@ Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
 
 ## 3. Authentication
 
-- [ ] **3.0 Serviço de e-mail próprio (SMTP) — OBRIGATÓRIO.** O envio embutido do Supabase manda só
+- [x] **3.0 Serviço de e-mail próprio (SMTP) — OBRIGATÓRIO.** O envio embutido do Supabase manda só
   2 e-mails por hora e só para membros da equipe do projeto: clientes não recebem o código. Crie uma
   conta num serviço como **Resend** ou **Brevo** (há planos gratuitos) e preencha em
   *Authentication → Emails → SMTP Settings* (host, porta, usuário, senha e remetente). O ideal é ter
   um domínio próprio para o remetente.
-- [ ] **3.1 Modelos de e-mail** (só depois do 3.0: no plano gratuito o Supabase não deixa editar os
+- [x] **3.1 Modelos de e-mail** (só depois do 3.0: no plano gratuito o Supabase não deixa editar os
   modelos sem SMTP próprio). Os textos prontos, em português, estão em `supabase/emails/`; o assunto
   está na primeira linha de cada arquivo:
   - `confirmar-cadastro.html` → *Confirm signup* (código para quem se cadastra)
