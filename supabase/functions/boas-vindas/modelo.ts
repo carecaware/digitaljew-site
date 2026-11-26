@@ -1,0 +1,59 @@
+// Modelo do e-mail de boas-vindas da DigitalJew (HTML compatível com programas de e-mail + texto puro).
+// Pré-visualização: supabase/emails/boas-vindas.html (gerada a partir deste arquivo).
+
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+
+export function boasVindas({ nome, siteUrl }: { nome: string; siteUrl?: string | null }) {
+  const primeiro = (nome || "").trim().split(/\s+/)[0] || "tudo bem";
+  const link = siteUrl ? `${siteUrl.replace(/\/+$/, "")}/area.html#downloads` : null;
+  const assunto = `Bem-vindo à DigitalJew, ${primeiro}!`;
+  const passo = (n: string, titulo: string, texto: string) => `
+          <tr><td style="padding:0 0 16px">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td valign="top" style="width:38px;font:600 12px/22px 'Courier New',monospace;color:#c98a14;letter-spacing:1px">${n}</td>
+              <td style="font:15px/1.6 Arial,Helvetica,sans-serif;color:#33475a"><strong style="color:#182838">${titulo}</strong> ${texto}</td>
+            </tr></table>
+          </td></tr>`;
+  const html = `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(assunto)}</title></head>
+<body style="margin:0;padding:0;background:#eef2f5">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef2f5">
+    <tr><td align="center" style="padding:32px 12px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:10px;overflow:hidden">
+        <tr><td style="background:#182838;padding:26px 32px">
+          <span style="font:700 22px Arial,Helvetica,sans-serif;color:#f8f8f8;letter-spacing:-.5px">Digital<span style="color:#58c0d0">Jew</span></span>
+          <span style="display:block;font:10px 'Courier New',monospace;color:#8fa3b3;letter-spacing:3px;margin-top:2px">SOFTWARE</span>
+        </td></tr>
+        <tr><td style="padding:34px 32px 8px">
+          <p style="margin:0 0 6px;font:600 11px 'Courier New',monospace;color:#c98a14;letter-spacing:2px">✳ BEM-VINDO</p>
+          <h1 style="margin:0 0 16px;font:800 28px/1.2 Arial,Helvetica,sans-serif;color:#182838;letter-spacing:-.8px">Olá, ${esc(primeiro)}! Sua conta está pronta.</h1>
+          <p style="margin:0 0 26px;font:15px/1.7 Arial,Helvetica,sans-serif;color:#33475a">Que bom ter você com a gente. O BarFácil foi feito para deixar o balcão menos caótico: comandas, estoque e faturamento num lugar só, sem complicação.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${passo("01", "Baixe o BarFácil", "na sua área de cliente, para o computador do caixa (Windows) ou para o celular (Android).")}${passo("02", "Copie a sua chave de teste.", "Ela libera <strong style=\"color:#182838\">7 dias grátis</strong>, com tudo liberado, contados a partir da primeira ativação.")}${passo("03", "Abra o app e cole a chave.", "Pronto: é só começar a usar.")}
+          </table>
+        </td></tr>${link ? `
+        <tr><td style="padding:8px 32px 30px">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#58c0d0;border-radius:4px">
+            <a href="${esc(link)}" style="display:inline-block;padding:14px 26px;font:800 14px Arial,Helvetica,sans-serif;color:#102637;text-decoration:none">Baixar o BarFácil ↓</a>
+          </td></tr></table>
+        </td></tr>` : ""}
+        <tr><td style="padding:0 32px 30px">
+          <p style="margin:0;padding-top:22px;border-top:1px solid #e3e8ec;font:14px/1.7 Arial,Helvetica,sans-serif;color:#33475a">Ficou com alguma dúvida? É só responder este e-mail ou chamar no WhatsApp <a href="https://wa.me/5511930607881" style="color:#3898b8">(11) 93060-7881</a>.</p>
+        </td></tr>
+        <tr><td style="background:#f5f7f9;padding:18px 32px">
+          <p style="margin:0;font:12px/1.6 Arial,Helvetica,sans-serif;color:#6b7b88">Você recebeu este e-mail porque criou uma conta na DigitalJew Software. Ele é enviado uma única vez.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+  const texto = [
+    `Olá, ${primeiro}! Sua conta na DigitalJew está pronta.`, "",
+    "1. Baixe o BarFácil na sua área de cliente (Windows ou Android).",
+    "2. Copie a sua chave de teste: 7 dias grátis, contados a partir da primeira ativação.",
+    "3. Abra o app e cole a chave.", "",
+    ...(link ? [`Baixar: ${link}`, ""] : []),
+    "Dúvidas? Responda este e-mail ou chame no WhatsApp (11) 93060-7881.",
+    "", "DigitalJew Software",
+  ].join("\n");
+  return { assunto, html, texto };
+}

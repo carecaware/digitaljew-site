@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#182838">
+<meta name="robots" content="noindex">
+<title>Redefinir senha · DigitalJew Software</title>
+<link rel="icon" type="image/jpeg" href="assets/brand/digitaljew-logo.jpg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar" id="topo"><a class="brand" href="index.html#inicio"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button><nav class="nav"><a href="index.html#produto">Produto</a><a href="index.html#downloads">Downloads</a><a href="index.html#novidades">Novidades</a><a href="index.html#sobre">Sobre</a><a href="area.html">Área do cliente</a></nav><a class="nav-cta" href="area.html#downloads">Baixar BarFácil ↗</a></header>
+
+<main class="signup section">
+  <div class="signup-intro">
+    <div class="kicker">ÁREA DO CLIENTE</div>
+    <h1>Nova senha.<br><span>Sem drama.</span></h1>
+    <p>Crie uma senha nova para a sua conta. Depois disso, é com ela que você entra.</p>
+  </div>
+
+  <div class="signup-card">
+    <section class="step" data-step="verificando">
+      <h2>Conferindo o link…</h2>
+      <p class="step-text">Só um instante.</p>
+    </section>
+
+    <section class="step" data-step="nova" hidden>
+      <h2>Criar senha nova</h2>
+      <p class="step-text" id="nova-texto">Escolha uma senha forte.</p>
+      <form id="form-nova" novalidate>
+        <label class="field"><span>Nova senha</span><input name="senha" type="password" autocomplete="new-password" minlength="8" required aria-describedby="nova-dica"></label>
+        <div class="pw-meter" id="medidor-nova"></div>
+        <label class="field"><span>Repita a nova senha</span><input name="repetir" type="password" autocomplete="new-password" required></label>
+        <p class="pw-tip" id="nova-dica">Dica: use uma frase com 3 ou 4 palavras que não combinam (ex.: “cavalo bateria grampo azul”). Tamanho vale mais que símbolos. Evite nomes, datas e senhas que você já usa em outros sites.</p>
+        <p class="form-error" id="erro-nova" role="alert" hidden></p>
+        <button class="button primary wide" type="submit" disabled>Salvar senha nova</button>
+      </form>
+    </section>
+
+    <section class="step" data-step="invalido" hidden>
+      <h2>Link expirado</h2>
+      <p class="step-text">Esse link já foi usado ou expirou. Peça um novo: é rapidinho.</p>
+      <a class="button primary wide" href="cadastro.html?esqueci=1#entrar">Pedir um novo link</a>
+    </section>
+
+    <section class="step done" data-step="pronto" hidden>
+      <div class="done-mark" aria-hidden="true">✳</div>
+      <h2>Senha alterada!</h2>
+      <p class="step-text">Pronto. A partir de agora, entre com o seu e-mail e a senha nova.</p>
+      <a class="button primary" href="area.html">Ir para minha área</a>
+    </section>
+  </div>
+</main>
+
+<footer class="footer"><a href="index.html#inicio" class="footer-brand"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><div class="footer-copy"><span>SOFTWARE COM PROPÓSITO.</span><span>© <span id="year"></span> DIGITALJEW SOFTWARE</span><a href="politica-privacidade.html">POLÍTICA DE PRIVACIDADE</a></div><a class="back-top" href="#topo">VOLTAR AO TOPO ↑</a></footer>
+<script src="config.js"></script>
+<script src="vendor/supabase-js-2.117.3.min.js"></script>
+<script src="conta.js"></script>
+<script src="redefinir-senha.js"></script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 -- Downloads e chave de teste na área do cliente (area.html → Downloads).
 -- Rode DEPOIS de clientes.sql e licencas-cliente.sql (e das migrações do app até a migration-008).
+-- Se mudar clientes.sql ou licencas-cliente.sql, rode os três de novo, nesta ordem.
 -- SQL Editor -> New query -> colar -> Run. Seguro para rodar mais de uma vez.
 
 -- ---------------------------------------------------------------------------------------------
@@ -60,8 +61,8 @@ begin
 
   loop
     begin
-      insert into licenses (license_key, platform, customer_name, customer_contact, cliente_id, tier, trial_days, max_activations)
-      values (nova_chave_licenca(), p_plataforma, cli.nome, coalesce(cli.email, mail), uid, 'premium', 7, 1)
+      insert into licenses (license_key, platform, customer_name, client_temp_name, customer_contact, cliente_id, tier, trial_days, max_activations)
+      values (nova_chave_licenca(), p_plataforma, cli.nome, nome_google(uid), coalesce(cli.email, mail), uid, 'premium', 7, 1)
       returning * into l;
       exit;
     exception when unique_violation then

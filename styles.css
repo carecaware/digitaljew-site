@@ -229,3 +229,40 @@ mark.preencher{background:#f8c058;color:#182838;padding:1px 6px;border-radius:2p
 @media(max-width:850px){.dl-grid{grid-template-columns:1fr}.download-steps{grid-template-columns:1fr}}
 
 .field .opcional{font-style:normal;font-weight:500;color:#8fa3b3}
+
+/* Senhas: sem "olhinho" nativo do navegador (Edge/IE) */
+input[type=password]::-ms-reveal,input[type=password]::-ms-clear{display:none}
+/* Medidor de força: 4 barras finas */
+.pw-meter{margin:-6px 0 8px}
+.pw-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pw-bars i{height:3px;border-radius:2px;background:#ffffff1f;transition:background .2s}
+.pw-label{display:block;min-height:18px;margin-top:6px;font-size:12px;font-weight:700;color:var(--muted)}
+.pw-meter[data-nivel="1"] .pw-bars i:nth-child(-n+1){background:#ff5c5c}
+.pw-meter[data-nivel="2"] .pw-bars i:nth-child(-n+2){background:#ff9f43}
+.pw-meter[data-nivel="3"] .pw-bars i:nth-child(-n+3){background:#f8c058}
+.pw-meter[data-nivel="4"] .pw-bars i{background:#3ecf8e}
+.pw-meter[data-nivel="1"] .pw-label{color:#ff5c5c}
+.pw-meter[data-nivel="2"] .pw-label{color:#ff9f43}
+.pw-meter[data-nivel="3"] .pw-label{color:#f8c058}
+.pw-meter[data-nivel="4"] .pw-label{color:#3ecf8e}
+.pw-tip{font-size:12px;line-height:1.6;color:#8fa3b3;margin:0 0 16px}
+.button.wide:disabled{opacity:.45;cursor:not-allowed}
+.link-button.forgot{display:block;margin:-6px 0 16px auto;font-size:12px}
+.step-text.small{font-size:12px;margin-top:-14px}
+
+/* Janela "Esqueci a senha" */
+.modal-fundo{position:fixed;inset:0;background:#0a1520c4;z-index:50}
+.modal{position:fixed;z-index:51;top:50%;left:50%;transform:translate(-50%,-50%);width:min(440px,calc(100vw - 32px));background:var(--panel);border:1px solid #58c0d059;padding:34px 30px 28px;box-shadow:0 30px 80px #0009}
+.modal h2{font-size:22px;letter-spacing:-.03em;margin:0 0 14px}
+.modal .step-text{margin:0 0 20px}
+.modal-fechar{position:absolute;top:12px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#ffffff12;color:var(--white);font-size:22px;line-height:1;cursor:pointer}
+.modal-fechar:hover{background:#ffffff24}
+
+/* Cadastro: entrada do texto na primeira visita (mesmo efeito do letreiro da página inicial) */
+.anim-cadastro .signup-intro .drop{opacity:0;transform:translateY(-28px)}
+.anim-cadastro.anim-in .signup-intro .drop{--d:calc(var(--i,0)*.12s);opacity:1;transform:none;transition:opacity calc(2s - var(--d)) ease-out var(--d),transform calc(2s - var(--d)) cubic-bezier(.16,1,.3,1) var(--d)}
+@media(prefers-reduced-motion:reduce){.anim-cadastro .signup-intro .drop{opacity:1;transform:none;transition:none}}
+
+.area-sub{font-size:22px;letter-spacing:-.03em;margin:44px 0 16px;padding-top:30px;border-top:1px solid var(--line);max-width:460px}
+.area-note{color:var(--muted);font-size:13px;line-height:1.7;max-width:460px}
+.area-form .button[type=submit]:disabled{opacity:.45;cursor:not-allowed}

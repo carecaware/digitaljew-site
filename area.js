@@ -1,7 +1,7 @@
 /* Área interna do cliente: assinatura, dados de pagamento e meus dados.
  * Só abre para quem está logado; o login fica guardado até o cliente clicar em "Sair" (ver conta.js). */
 (() => {
-  const { cfg, sb, digits, maskPhone, phoneE164, validPhone, msg, busy } = window.DJ;
+  const { cfg, sb, digits, maskPhone, phoneE164, validPhone, msg, busy, ligarMedidor } = window.DJ;
   const $ = id => document.getElementById(id);
   const ENTRAR = 'cadastro.html#entrar';
   let user = null, saindo = false;
@@ -151,7 +151,7 @@
 
   /* ---------- meus dados ---------- */
   async function carregarPerfil() {
-    const { data } = await sb.from('clientes').select('nome, email, whatsapp').eq('id', user.id).maybeSingle();
+    const { data } = await sb.from('clientes').select('nome, email, whatsapp, tipo_comercio, metodo').eq('id', user.id).maybeSingle();
     const m = user.user_metadata || {};
     const nome = (data && data.nome) || m.full_name || m.nome || '';
     $('usuario-nome').textContent = nome ? `Olá, ${nome.split(' ')[0]}!` : 'Olá!';
@@ -160,6 +160,11 @@
     f.nome.value = nome;
     f.email.value = user.email || (data && data.email) || '';
     f.whatsapp.value = maskPhone((data && data.whatsapp) || m.whatsapp || '');
+    f.tipo.value = (data && data.tipo_comercio) || '';
+    // senha: só para quem se cadastrou por e-mail
+    const google = data && data.metodo === 'google';
+    $('senha-google').hidden = !google;
+    $('form-trocar-senha').hidden = google;
     return !!data;
   }
 
@@ -174,11 +179,37 @@
     msg(err, '');
     const btn = f.querySelector('button[type="submit"]');
     busy(btn, true, 'Salvando…');
-    const { error } = await sb.from('clientes').update({ nome, whatsapp: phoneE164(f.whatsapp.value) }).eq('id', user.id);
+    const mud = { nome, whatsapp: phoneE164(f.whatsapp.value) };
+    if (f.tipo.value) mud.tipo_comercio = f.tipo.value;
+    const { error } = await sb.from('clientes').update(mud).eq('id', user.id);
     busy(btn, false);
     if (error) return msg(err, 'Não foi possível salvar agora. Tente de novo.');
     $('usuario-nome').textContent = `Olá, ${nome.split(' ')[0]}!`;
     msg(ok, 'Dados atualizados.');
+  });
+
+  /* ---------- trocar senha: senha atual + nova + repetir ---------- */
+  const ft = $('form-trocar-senha');
+  const nivelTroca = ligarMedidor(ft.nova, $('medidor-trocar'), () => [user && user.email, $('form-perfil').nome.value]);
+  const botaoTroca = ft.querySelector('button[type="submit"]');
+  const atualizarTroca = () => { botaoTroca.disabled = !ft.atual.value || nivelTroca() < 2 || !ft.repetir.value; msg($('erro-senha'), ''); msg($('ok-senha'), ''); };
+  ['atual', 'nova', 'repetir'].forEach(n => ft[n].addEventListener('input', atualizarTroca));
+  ft.addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('erro-senha');
+    if (nivelTroca() < 2) return msg(err, 'Escolha uma senha nova pelo menos média. Siga a dica abaixo dos campos.');
+    if (ft.nova.value !== ft.repetir.value) return msg(err, 'As duas senhas novas não são iguais.'), ft.repetir.focus();
+    if (ft.nova.value === ft.atual.value) return msg(err, 'A senha nova precisa ser diferente da atual.');
+    busy(botaoTroca, true, 'Trocando…');
+    try {
+      // confere a senha atual antes de trocar
+      const conf = await sb.auth.signInWithPassword({ email: user.email, password: ft.atual.value });
+      if (conf.error) return msg(err, conf.error.status === 429 ? 'Muitas tentativas. Aguarde um minuto e tente de novo.' : 'A senha atual está incorreta.'), ft.atual.focus();
+      const { error } = await sb.auth.updateUser({ password: ft.nova.value });
+      if (error) return msg(err, /weak|short|characters/i.test(error.message || '') ? 'Essa senha não foi aceita. Use pelo menos 8 caracteres e siga a dica.' : 'Não foi possível trocar a senha agora. Tente de novo.');
+      ft.reset(); nivelTroca();
+      msg($('ok-senha'), 'Senha trocada. Use a nova na próxima vez que entrar.');
+    } finally { busy(botaoTroca, false); botaoTroca.disabled = true; }
   });
 
   /* ---------- painel de pagamento (desliza da direita) ---------- */

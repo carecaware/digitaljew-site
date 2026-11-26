@@ -52,12 +52,16 @@ Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
   conta num serviço como **Resend** ou **Brevo** (há planos gratuitos) e preencha em
   *Authentication → Emails → SMTP Settings* (host, porta, usuário, senha e remetente). O ideal é ter
   um domínio próprio para o remetente.
-- [ ] **3.1 Modelos de e-mail com o código** (só depois do 3.0: no plano gratuito o Supabase não deixa
-  editar os modelos sem SMTP próprio). Os textos prontos, em português, estão em
-  `supabase/emails/confirmar-cadastro.html` (*Confirm signup*) e `supabase/emails/codigo-de-acesso.html`
-  (*Magic Link*); o assunto está na primeira linha de cada arquivo. Sem eles, o cliente recebe um link
-  em vez do código.
-- [x] **3.2 Providers → Email:** validade do código = `600` (10 minutos) e código com 6 dígitos.
+- [ ] **3.1 Modelos de e-mail** (só depois do 3.0: no plano gratuito o Supabase não deixa editar os
+  modelos sem SMTP próprio). Os textos prontos, em português, estão em `supabase/emails/`; o assunto
+  está na primeira linha de cada arquivo:
+  - `confirmar-cadastro.html` → *Confirm signup* (código para quem se cadastra)
+  - `codigo-de-acesso.html` → *Magic Link* (código para conta que já existe)
+  - `redefinir-senha.html` → *Reset password* (link do "Esqueci a senha", funciona em qualquer aparelho)
+  Sem eles, o cliente recebe um link em inglês em vez do código. Com o token do Supabase nesta sessão,
+  o Claude aplica os três de uma vez.
+- [x] **3.2 Providers → Email:** validade do código = `600` (10 minutos), código com 6 dígitos e senha
+  com no mínimo 8 caracteres.
 - [x] **3.3 Providers → Google:** ative e cole o *Client ID* e o *Client Secret*. No Google Cloud
   Console, a credencial (tipo *Web application*) precisa ter o redirecionamento
   `https://sydjqruprgixevqcrhdv.supabase.co/auth/v1/callback`. Publique o app de consentimento
@@ -68,6 +72,16 @@ Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
   - *Redirect URLs*: `https://SEU-SITE/**` e, para testar no PC, `http://localhost:8000/**`.
 - [x] **3.5 Sessions:** *Time-box user sessions* e *Inactivity timeout* **desligados** (padrão) —
   é o que mantém o cliente logado até clicar em "Sair".
+
+## 3b. E-mail de boas-vindas (função `boas-vindas`, já implantada)
+
+- [ ] **3b.1** No Brevo, crie uma chave em *SMTP & API → API Keys* (é diferente da chave SMTP).
+- [ ] **3b.2** Em *Supabase → Edge Functions → Secrets*, crie:
+  - `BREVO_API_KEY` = a chave do passo anterior
+  - `EMAIL_REMETENTE` = o e-mail remetente verificado no Brevo
+  - `SITE_URL` = o endereço público do site (opcional; sem ele, o e-mail vai sem o botão "Baixar")
+  Sem esses segredos, o cadastro funciona normalmente, só não envia o e-mail de boas-vindas.
+  Pré-visualização do e-mail: `supabase/emails/boas-vindas.html`.
 
 ## 4. Dados
 

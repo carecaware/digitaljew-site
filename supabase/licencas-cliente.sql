@@ -12,6 +12,35 @@
 alter table licenses add column if not exists cliente_id uuid references clientes(id) on delete set null;
 create index if not exists licenses_cliente_idx on licenses(cliente_id);
 
+-- Nome que veio da conta Google no primeiro login (provisório: o cliente confirma o nome dele no
+-- cadastro, e esse fica em customer_name). Fica vazio para quem se cadastra por e-mail.
+alter table licenses add column if not exists client_temp_name text;
+
+create or replace function nome_google(uid uuid) returns text
+language sql stable security definer set search_path = public, auth as $$
+  select nullif(trim(coalesce(u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name')), '')
+  from auth.users u
+  where u.id = uid
+    and (u.raw_app_meta_data ->> 'provider' = 'google' or coalesce(u.raw_app_meta_data -> 'providers', '[]'::jsonb) ? 'google');
+$$;
+revoke all on function nome_google(uuid) from public, anon, authenticated;
+
+-- Quando o cadastro é concluído, as licenças que já eram dele (pelo e-mail) recebem o nome do Google.
+create or replace function clientes_nome_google_nas_licencas() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare g text := nome_google(new.id);
+begin
+  if g is not null then
+    update licenses set client_temp_name = g
+    where client_temp_name is null
+      and (cliente_id = new.id or (cliente_id is null and lower(trim(customer_contact)) = lower(new.email)));
+  end if;
+  return new;
+end $$;
+drop trigger if exists clientes_nome_google on clientes;
+create trigger clientes_nome_google after insert on clientes
+  for each row execute function clientes_nome_google_nas_licencas();
+
 -- Próximo dia de cobrança: o mesmo dia do mês em que a cobrança começou (ajustado ao tamanho do
 -- mês), contado no horário de Brasília. Mesma regra da função schedule-downgrade do app.
 create or replace function proxima_data_cobranca(desde timestamptz)

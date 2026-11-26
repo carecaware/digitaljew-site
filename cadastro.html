@@ -8,15 +8,16 @@
 <title>Cadastro · DigitalJew Software</title>
 <link rel="icon" type="image/jpeg" href="assets/brand/digitaljew-logo.jpg">
 <link rel="stylesheet" href="styles.css">
+<script>try{if(!localStorage.getItem("dj_cadastro_visto"))document.documentElement.classList.add("anim-cadastro")}catch(e){}</script>
 </head>
 <body>
 <header class="topbar" id="topo"><a class="brand" href="index.html#inicio"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button><nav class="nav"><a href="index.html#produto">Produto</a><a href="index.html#downloads">Downloads</a><a href="index.html#novidades">Novidades</a><a href="index.html#sobre">Sobre</a><a href="area.html" aria-current="page">Área do cliente</a></nav><a class="nav-cta" href="area.html#downloads">Baixar BarFácil ↗</a></header>
 
 <main class="signup section">
   <div class="signup-intro">
-    <div class="kicker">ÁREA DO CLIENTE</div>
-    <h1>Crie sua conta.<br><span>Leva um minuto.</span></h1>
-    <p>Com o cadastro você recebe novidades do BarFácil, acompanha suas licenças e fala com a gente mais rápido.</p>
+    <div class="kicker drop" style="--i:0">ÁREA DO CLIENTE</div>
+    <h1 class="drop" style="--i:1">Crie sua conta.<br><span>Leva um minuto.</span></h1>
+    <p class="drop" style="--i:2">Com o cadastro você recebe novidades do BarFácil, acompanha suas licenças e fala com a gente mais rápido.</p>
   </div>
 
   <div class="signup-card">
@@ -30,8 +31,14 @@
       <div class="divider"><span>ou cadastre-se com seus dados</span></div>
       <form id="form-dados" novalidate>
         <label class="field"><span>Nome completo</span><input name="nome" autocomplete="name" required></label>
-        <label class="field"><span>E-mail</span><input name="email" type="email" autocomplete="email" required></label>
+        <label class="field"><span>E-mail</span><input name="email" type="email" autocomplete="off" placeholder="john.doe@exemplo.com" required></label>
         <label class="field"><span>WhatsApp</span><input name="whatsapp" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(11) 98765-4321" required></label>
+        <label class="field"><span>Tipo de comércio</span>
+          <select name="tipo" required>
+            <option value="">Selecione</option>
+            <option>Bar/pub</option><option>Boteco</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Casa noturna</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option>
+          </select>
+        </label>
         <label class="field"><span>Onde ouviu falar de nós?</span>
           <select name="origem" required>
             <option value="">Selecione</option>
@@ -56,9 +63,11 @@
       </button>
       <div class="divider"><span>ou entre com seu e-mail</span></div>
       <form id="form-entrar" novalidate>
-        <label class="field"><span>E-mail</span><input name="email" type="email" autocomplete="email" required></label>
+        <label class="field"><span>E-mail</span><input name="email" type="email" autocomplete="off" placeholder="john.doe@exemplo.com" required></label>
+        <label class="field"><span>Senha</span><input name="senha" type="password" autocomplete="current-password" required></label>
+        <button type="button" class="link-button forgot" id="abrir-esqueci">Esqueci a senha</button>
         <p class="form-error" id="erro-entrar" role="alert" hidden></p>
-        <button class="button primary wide" type="submit">Enviar código de acesso</button>
+        <button class="button primary wide" type="submit">Entrar</button>
       </form>
       <p class="switch">Ainda não tem conta? <a href="#cadastro" data-ir="dados">Cadastre-se</a></p>
     </section>
@@ -76,25 +85,36 @@
       <button type="button" class="link-button muted" id="voltar-codigo">← Corrigir meu e-mail</button>
     </section>
 
-    <!-- Passo extra: completar cadastro de quem entrou com Google -->
+    <!-- Passo 3 (cadastro por e-mail): criar a senha -->
+    <section class="step" data-step="senha" hidden>
+      <h2>Crie sua senha</h2>
+      <p class="step-text">E-mail confirmado! Agora crie uma senha forte. É com ela e com o seu e-mail que você vai entrar daqui em diante.</p>
+      <form id="form-senha" novalidate>
+        <label class="field"><span>Nova senha</span><input name="senha" type="password" autocomplete="new-password" minlength="8" required aria-describedby="senha-dica"></label>
+        <div class="pw-meter" id="medidor-senha"></div>
+        <p class="pw-tip" id="senha-dica">Dica: use uma frase com 3 ou 4 palavras que não combinam (ex.: “cavalo bateria grampo azul”). Tamanho vale mais que símbolos. Evite nomes, datas e senhas que você já usa em outros sites.</p>
+        <p class="form-error" id="erro-senha" role="alert" hidden></p>
+        <button class="button primary wide" type="submit" disabled>Salvar senha e concluir</button>
+      </form>
+    </section>
+
+    <!-- Completar cadastro (entrada pelo Google, ou cadastro por e-mail interrompido) -->
     <section class="step" data-step="completar" hidden>
       <h2>Só mais um passo</h2>
-      <p class="step-text" id="completar-texto">Complete o cadastro com os dados abaixo.</p>
+      <p class="step-text" id="completar-texto">Complete o seu cadastro. É só desta vez.</p>
       <form id="form-completar" novalidate>
         <label class="field"><span>Nome completo</span><input name="nome" autocomplete="name" required></label>
         <label class="field"><span>E-mail</span><input name="email" type="email" readonly></label>
         <label class="field"><span>WhatsApp</span><input name="whatsapp" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(11) 98765-4321" required></label>
-        <label class="field"><span>Onde ouviu falar de nós?</span>
-          <select name="origem" required>
+        <label class="field"><span>Tipo de comércio</span>
+          <select name="tipo" required>
             <option value="">Selecione</option>
-            <option>Instagram</option><option>Facebook</option><option>TikTok</option><option>YouTube</option>
-            <option>Pesquisa no Google</option><option>Indicação de amigo ou conhecido</option><option>Outro</option>
+            <option>Bar/pub</option><option>Boteco</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Casa noturna</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option>
           </select>
         </label>
-        <label class="field" hidden><span>Conte pra gente onde <em class="opcional">(opcional)</em></span><input name="origem_outro" placeholder="Ex.: indicação do fornecedor, feira, rádio…"></label>
         <p class="form-error" id="erro-completar" role="alert" hidden></p>
-        <button class="button primary wide" type="submit">Concluir cadastro</button>
-        <p class="legal-note">Ao concluir, você declara ter lido a nossa <a href="politica-privacidade.html" target="_blank">Política de privacidade</a>.</p>
+        <button class="button primary wide" type="submit">Seguir</button>
+        <p class="legal-note">Ao seguir, você declara ter lido a nossa <a href="politica-privacidade.html" target="_blank">Política de privacidade</a>.</p>
       </form>
     </section>
 
@@ -103,12 +123,27 @@
       <div class="done-mark" aria-hidden="true">✳</div>
       <h2>Cadastro concluído!</h2>
       <p class="step-text" id="pronto-texto">Tudo certo. Bem-vindo à DigitalJew.</p>
+      <p class="step-text small">Enviamos um e-mail de boas-vindas para você.</p>
       <a class="button primary" href="area.html#downloads">Baixar o BarFácil ↓</a>
       <a class="link-button muted" href="area.html">Ir para minha área</a>
       <a class="link-button muted" href="index.html#inicio">Voltar ao início</a>
     </section>
   </div>
 </main>
+
+<!-- Esqueci a senha -->
+<div class="modal-fundo" id="esqueci-fundo" hidden></div>
+<div class="modal" id="esqueci" role="dialog" aria-modal="true" aria-labelledby="esqueci-titulo" hidden>
+  <button type="button" class="modal-fechar" data-fechar aria-label="Fechar">×</button>
+  <h2 id="esqueci-titulo">Esqueci a senha</h2>
+  <p class="step-text">Digite o e-mail da sua conta. Vamos enviar um link para você criar uma senha nova.</p>
+  <form id="form-esqueci" novalidate>
+    <label class="field"><span>E-mail</span><input name="email" type="email" autocomplete="off" placeholder="john.doe@exemplo.com" required></label>
+    <p class="form-error" id="erro-esqueci" role="alert" hidden></p>
+    <p class="form-ok" id="ok-esqueci" role="status" hidden></p>
+    <button class="button primary wide" type="submit">Enviar link</button>
+  </form>
+</div>
 
 <footer class="footer"><a href="index.html#inicio" class="footer-brand"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><div class="footer-copy"><span>SOFTWARE COM PROPÓSITO.</span><span>© <span id="year"></span> DIGITALJEW SOFTWARE</span><a href="politica-privacidade.html">POLÍTICA DE PRIVACIDADE</a></div><a class="back-top" href="#topo">VOLTAR AO TOPO ↑</a></footer>
 <script src="config.js"></script>

@@ -12,6 +12,11 @@ create table if not exists clientes (
   updated_at timestamptz not null default now()
 );
 
+-- Campos adicionados depois (seguro rodar de novo)
+alter table clientes add column if not exists tipo_comercio text;        -- bar/pub, pizzaria, restaurante...
+alter table clientes add column if not exists boas_vindas_em timestamptz; -- quando o e-mail de boas-vindas foi enviado
+alter table clientes alter column origem drop not null;
+
 alter table clientes enable row level security;
 
 -- Cada cliente só enxerga e altera o próprio cadastro.

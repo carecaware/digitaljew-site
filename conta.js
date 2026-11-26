@@ -32,6 +32,52 @@ window.DJ = (() => {
     else { btn.textContent = btn.dataset.label || btn.textContent; btn.disabled = false; }
   }
 
+  /* ---------- força da senha ----------
+   * Segue as recomendações atuais (NIST SP 800-63B): o que mais pesa é o TAMANHO; não exige
+   * símbolos obrigatórios; derruba senhas comuns, sequências, repetições e dados pessoais.
+   * Níveis: 0 vazio · 1 fraca · 2 média · 3 forte · 4 muito forte. Mínimo aceito: 2 (média). */
+  const COMUNS = new Set(['123456','1234567','12345678','123456789','1234567890','12345','111111','000000','123123','102030','senha','senha123','senha1234','password','password1','qwerty','qwerty123','abc123','abcd1234','iloveyou','admin','admin123','welcome','bemvindo','brasil','flamengo','corinthians','palmeiras','saopaulo','vasco','gremio','cruzeiro','santos','botafogo','fluminense','internacional','mudar123','teste123','minhasenha','amor','jesus','deus','familia','futebol','barfacil','digitaljew','pizzaria','restaurante','cerveja','boteco']);
+  function forcaSenha(pw, pessoais = []) {
+    pw = String(pw || '');
+    if (!pw) return 0;
+    const chars = [...pw];
+    if (chars.length < 8) return 1;
+    let base = pw.toLowerCase();
+    const sem = base.replace(/[^a-zà-ú]/g, '');
+    if (COMUNS.has(base) || (sem.length >= 4 && COMUNS.has(sem) && sem.length >= base.length - 4)) return 1;
+    // tira pedaços pessoais (nome, e-mail) antes de medir
+    for (const p of pessoais.map(x => String(x || '').toLowerCase()).flatMap(x => x.split(/[\s@._-]+/)).filter(x => x.length >= 3))
+      base = base.split(p).join('');
+    // repetições e sequências (aaaa, 1234, abcd) quase não somam
+    let efetivo = 0, ant = null;
+    for (const c of [...base]) {
+      const k = c.codePointAt(0);
+      if (ant === null || (k !== ant && Math.abs(k - ant) !== 1)) efetivo += 1;
+      ant = k;
+    }
+    let pool = 0;
+    if (/[a-zà-ú]/.test(pw)) pool += 26;
+    if (/[A-ZÀ-Ú]/.test(pw)) pool += 26;
+    if (/\d/.test(pw)) pool += 10;
+    if (/[^a-zA-Zà-úÀ-Ú\d]/.test(pw)) pool += 33;
+    const bits = efetivo * Math.log2(Math.max(pool, 10));
+    return bits < 45 ? 1 : bits < 60 ? 2 : bits < 80 ? 3 : 4;
+  }
+  const NIVEIS = ['', 'Fraca', 'Média', 'Forte', 'Muito forte'];
+  /* Liga um campo de senha a um medidor: <div class="pw-meter"> com 4 barras e um rótulo. */
+  function ligarMedidor(input, meter, pessoais = () => []) {
+    meter.innerHTML = '<div class="pw-bars"><i></i><i></i><i></i><i></i></div><span class="pw-label" aria-live="polite"></span>';
+    const atualizar = () => {
+      const n = forcaSenha(input.value, pessoais());
+      meter.dataset.nivel = n;
+      meter.querySelector('.pw-label').textContent = n ? `Força da senha: ${NIVEIS[n]}` : '';
+      return n;
+    };
+    input.addEventListener('input', atualizar);
+    atualizar();
+    return atualizar;
+  }
+
   /* menu do celular e ano do rodapé (iguais à página inicial) */
   document.querySelector('.menu-toggle')?.addEventListener('click', e => {
     const n = document.querySelector('.nav'), o = n.classList.toggle('open');
@@ -39,5 +85,5 @@ window.DJ = (() => {
   });
   const y = document.getElementById('year'); if (y) y.textContent = new Date().getFullYear();
 
-  return { cfg, sb, digits, nationalDigits, maskPhone, phoneE164, validPhone, validEmail, hideEmail, msg, busy };
+  return { cfg, sb, digits, nationalDigits, maskPhone, phoneE164, validPhone, validEmail, hideEmail, msg, busy, forcaSenha, ligarMedidor, NIVEIS };
 })();
