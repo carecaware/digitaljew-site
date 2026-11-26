@@ -313,3 +313,6 @@ input[type=password]::-ms-reveal,input[type=password]::-ms-clear{display:none}
 .estab-card .button.wide{margin-top:auto;cursor:pointer}
 @media(max-width:1100px){.estab-form{grid-template-columns:1fr 1fr}.estab-form-acao{grid-column:1/-1}}
 @media(max-width:650px){.estab-form{grid-template-columns:1fr}.estab-grid{grid-template-columns:1fr}.estab-lic{flex-direction:column}}
+
+.estab-extra{font-size:12px;color:var(--muted);margin:-6px 0 16px}
+.estab-extra:empty{display:none}

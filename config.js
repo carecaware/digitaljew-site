@@ -17,5 +17,5 @@ window.DIGITALJEW_CONFIG = {
   resendCooldownSeconds: 60,
 
   /* Valor mensal mostrado na área do cliente (deixe null para não mostrar). Ex.: basica: 29.90 */
-  precos: { basica: null, premium: null }
+  precos: { basica: null, premium: null, aparelho_extra: 22.00 }
 };

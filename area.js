@@ -220,6 +220,7 @@
   const ja = $('adquirir'), jaFundo = $('adquirir-fundo'), fa = $('form-adquirir');
   let compra = null, focoAntesCompra = null;
   document.querySelectorAll('[data-preco]').forEach(el => { const v = PRECOS[el.dataset.preco]; el.textContent = v != null ? `${reais(v)} por mês` : 'Valor mensal a definir'; });
+  if (PRECOS.aparelho_extra != null) $('preco-extra').textContent = `Cada aparelho a mais no mesmo estabelecimento: + ${reais(PRECOS.aparelho_extra)} por mês.`;
   function abrirAdquirir(estabId) {
     const est = estabs.find(x => x.id === estabId); if (!est) return;
     compra = { estabelecimento_id: est.id }; focoAntesCompra = document.activeElement;
