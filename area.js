@@ -18,8 +18,10 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   /* ---------- telas (menu) ---------- */
+  let telaAtual = 'assinatura';
   function mostrarView(nome) {
     if (!document.querySelector(`.area-view[data-view="${nome}"]`)) nome = 'assinatura';
+    telaAtual = nome;
     document.querySelectorAll('.area-view').forEach(v => { v.hidden = v.dataset.view !== nome; });
     document.querySelectorAll('.area-nav [data-view]').forEach(a => a.toggleAttribute('aria-current', a.dataset.view === nome));
   }
@@ -29,6 +31,13 @@
     else { fecharPagamento(true); mostrarView(h || 'assinatura'); }
   }
   window.addEventListener('hashchange', rota);
+  // clique no menu: troca a tela na hora, mesmo que o endereço já aponte para ela
+  document.querySelectorAll('.area-nav [data-view], a[href^="#"][data-view]').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    fecharPagamento(true);
+    history.replaceState(null, '', '#' + a.dataset.view);
+    mostrarView(a.dataset.view);
+  }));
 
   /* ---------- assinatura: vem das licenças do app (função minhas_licencas no Supabase) ---------- */
   function cardLicenca(l) {
@@ -228,7 +237,8 @@
     drawer.classList.remove('open'); fundo.classList.remove('open');
     document.body.classList.remove('no-scroll');
     setTimeout(() => { drawer.hidden = true; fundo.hidden = true; }, 320);
-    if (!semHistorico && location.hash === '#pagamento') history.replaceState(null, '', location.pathname + '#assinatura');
+    // ao fechar, o endereço volta para a tela que está aberta por trás do painel
+    if (!semHistorico && location.hash === '#pagamento') history.replaceState(null, '', location.pathname + '#' + telaAtual);
     if (voltarFoco) voltarFoco.focus({ preventScroll: true });
   }
   document.querySelectorAll('[data-abrir-pagamento]').forEach(a => a.addEventListener('click', e => {
