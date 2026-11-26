@@ -8,6 +8,7 @@
 (() => {
   const { cfg, sb, digits, maskPhone, phoneE164, validPhone, validEmail, hideEmail, msg, busy, ligarMedidor } = window.DJ;
   const TTL_MS = (cfg.codeTtlMinutes || 10) * 60 * 1000;
+  const TAM_CODIGO = cfg.codeLength || 6;
   const COOLDOWN_S = cfg.resendCooldownSeconds || 60;
   const $ = id => document.getElementById(id);
 
@@ -93,13 +94,22 @@
 
   /* ---------- 2) código de confirmação ---------- */
   const campo = $('campo-codigo');
-  campo.addEventListener('input', () => { campo.value = digits(campo.value).slice(0, 10); campo.classList.remove('invalid'); });
+  campo.maxLength = TAM_CODIGO;
+  // aceita só os dígitos do código; colar de novo (ou colar texto com o código no meio) substitui em vez de duplicar
+  campo.addEventListener('paste', e => {
+    const colado = digits((e.clipboardData || window.clipboardData).getData('text'));
+    if (!colado) return;
+    e.preventDefault();
+    campo.value = colado.slice(0, TAM_CODIGO);
+    campo.dispatchEvent(new Event('input'));
+  });
+  campo.addEventListener('input', () => { campo.value = digits(campo.value).slice(0, TAM_CODIGO); campo.classList.remove('invalid'); });
   function erroCodigo(text) { msg($('erro-codigo'), text); campo.classList.toggle('invalid', !!text); }
 
   $('form-codigo').addEventListener('submit', async e => {
     e.preventDefault();
     const token = digits(campo.value);
-    if (token.length < 6) return erroCodigo('Digite o código completo que você recebeu.');
+    if (token.length < TAM_CODIGO) return erroCodigo(`Digite os ${TAM_CODIGO} dígitos do código que você recebeu.`);
     if (Date.now() > st.expiraEm) return erroCodigo('O código está expirado. Clique abaixo para enviar um novo código.');
     const btn = e.target.querySelector('button[type="submit"]');
     busy(btn, true, 'Conferindo…');

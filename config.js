@@ -11,6 +11,8 @@ window.DIGITALJEW_CONFIG = {
   supabaseKey: "sb_publishable_-Ht37rNyJ83bWWpuZSe37g_HnENbcI9",
   /* Precisa bater com a validade configurada no Supabase (Authentication → Providers → Email e Phone). */
   codeTtlMinutes: 10,
+  /* Quantidade de dígitos do código (igual ao Supabase: Authentication -> Providers -> Email). */
+  codeLength: 6,
   /* Intervalo mínimo entre pedidos de código (o padrão do Supabase é 60 s). */
   resendCooldownSeconds: 60,
 
