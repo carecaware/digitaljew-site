@@ -75,8 +75,8 @@ Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
 
 ## 3b. E-mail de boas-vindas (função `boas-vindas`, já implantada)
 
-- [ ] **3b.1** No Brevo, crie uma chave em *SMTP & API → API Keys* (é diferente da chave SMTP).
-- [ ] **3b.2** Em *Supabase → Edge Functions → Secrets*, crie:
+- [x] **3b.1** No Brevo, crie uma chave em *SMTP & API → API Keys* (é diferente da chave SMTP).
+- [x] **3b.2** Em *Supabase → Edge Functions → Secrets*, crie:
   - `BREVO_API_KEY` = a chave do passo anterior
   - `EMAIL_REMETENTE` = o e-mail remetente verificado no Brevo
   - `SITE_URL` = o endereço público do site (opcional; sem ele, o e-mail vai sem o botão "Baixar")
