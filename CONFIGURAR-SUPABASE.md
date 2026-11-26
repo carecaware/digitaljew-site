@@ -21,6 +21,8 @@ rodados mais de uma vez; se você rodou uma versão antiga, rode a atual por cim
   https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/migration-008.sql
 - [x] **1.4** `downloads-e-chaves.sql` (site) — chave de teste automática e permissão de download
   https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/downloads-e-chaves.sql
+- [x] **1.6** `migration-009.sql` (app) — backup na nuvem dos dados do app
+  https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/migration-009.sql
 - [x] **1.5** `estabelecimentos.sql` (site) — Meus estabelecimentos (rode depois do 1.4)
   https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/estabelecimentos.sql
 
@@ -42,6 +44,9 @@ rodados mais de uma vez; se você rodou uma versão antiga, rode a atual por cim
 - [x] **2.4** Função **`validate-license`** (já existe): substitua o código por este e faça o deploy,
   mantendo o "Enforce JWT verification" **desligado** — rode antes o item 1.3:
   https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/functions/validate-license/index.ts
+
+- [x] **2.5** Função **`backup`** (app, nova): implantada com "Enforce JWT verification" **desligado**:
+  https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/functions/backup/index.ts
 
 Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
 `supabase functions deploy download-instalador --no-verify-jwt` (na pasta do site) e
