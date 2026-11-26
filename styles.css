@@ -81,7 +81,7 @@ body.no-scroll{overflow:hidden}
 .area-loading{color:var(--muted);font-size:14px}
 .area-layout{display:grid;grid-template-columns:240px 1fr;gap:clamp(30px,5vw,70px);align-items:start}
 .area-layout>*{min-width:0}
-.area-menu{position:sticky;top:110px;border:1px solid var(--line);background:var(--panel)}
+.area-menu{border:1px solid var(--line);background:var(--panel)}
 .area-user{display:flex;flex-direction:column;gap:4px;padding:22px 22px 18px;border-bottom:1px solid var(--line)}
 .area-user .kicker{margin-bottom:8px}
 .area-user strong{font-size:18px;letter-spacing:-.03em}
