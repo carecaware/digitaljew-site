@@ -27,6 +27,8 @@ rodados mais de uma vez; se você rodou uma versão antiga, rode a atual por cim
   https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/estabelecimentos.sql
 - [x] **1.7** `migration-010.sql` (app) — aparelhos de garçom (vagas, conexão por código)
   https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/migration-010.sql
+- [x] **1.8** `migration-011.sql` (app) — comunicação caixa ↔ garçons pela nuvem (rode depois do 1.7)
+  https://github.com/carecaware/barfacil-source-code/blob/teste-por-aparelho/supabase/migration-011.sql
 
 **Limpeza (só se você rodou versões antigas):**
 - [ ] Tabela `assinaturas`, se existir e estiver vazia: `drop table if exists assinaturas;`
