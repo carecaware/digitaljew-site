@@ -17,5 +17,8 @@ window.DIGITALJEW_CONFIG = {
   resendCooldownSeconds: 60,
 
   /* Valor mensal mostrado na área do cliente (deixe null para não mostrar). Ex.: basica: 29.90 */
-  precos: { basica: 80.00, premium: 120.00, aparelho_extra: 20.00 }
+  precos: { basica: 80.00, premium: 120.00, aparelho_extra: 20.00 },
+
+  /* WhatsApp de atendimento (só números, com DDI e DDD), usado enquanto o Pix não está integrado. */
+  whatsapp: "5511930607881"
 };

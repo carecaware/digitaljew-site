@@ -71,8 +71,17 @@
         <div><dt>Versão do app</dt><dd>${esc(PLATAFORMAS[l.plataforma] || l.plataforma || '—')}</dd></div>
         <div><dt>${dataRotulo}</dt><dd>${esc(dataValor)}</dd></div>
         ${preco ? `<div><dt>Valor mensal</dt><dd>${esc(preco)}</dd></div>` : ''}
-      </dl>${aviso}${l.estabelecimento_id && nomeEstab(l.estabelecimento_id) ? `<p class="plan-estab">Estabelecimento: <a href="#estabelecimentos" data-view="estabelecimentos">${esc(nomeEstab(l.estabelecimento_id))}</a></p>` : ''}${acoesLicenca(l)}
+      </dl>${aviso}${l.estabelecimento_id && nomeEstab(l.estabelecimento_id) ? `<p class="plan-estab">Estabelecimento: <a href="#estabelecimentos" data-view="estabelecimentos">${esc(nomeEstab(l.estabelecimento_id))}</a></p>` : ''}${blocoGarcons(l)}${acoesLicenca(l)}
     </article>`;
+  }
+
+  /* ---------- aparelhos de garçom (vagas pagas por licença) ---------- */
+  const podeGarcom = l => l.plano !== 'teste' && l.situacao === 'ativa';
+  function blocoGarcons(l) {
+    if (!podeGarcom(l) && !l.aux_vagas) return '';
+    const preco = PRECOS.aparelho_extra != null ? ` (+ ${reais(PRECOS.aparelho_extra)}/mês)` : '';
+    return `<div class="plan-garcons"><span>Aparelhos de garçom: <b>${l.aux_em_uso || 0} de ${l.aux_vagas || 0}</b> em uso</span>`
+      + (podeGarcom(l) ? `<button type="button" class="link-button" data-garcom="${esc(l.id)}">+ Adicionar aparelho de garçom${esc(preco)}</button>` : '') + '</div>';
   }
 
   function acoesLicenca(l) {
@@ -149,7 +158,7 @@
       : l.situacao === 'expirada' ? 'Expirada'
       : l.proxima_cobranca ? `Próxima cobrança em ${dataLonga(l.proxima_cobranca)}` : 'Começa quando o app for ativado';
     return `<li class="estab-lic status-${esc(l.situacao)}">
-      <div><b>BarFácil ${esc(PLANOS[l.plano] || l.plano)}</b> · ${esc((PLATAFORMAS[l.plataforma] || l.plataforma).split(' (')[0])} · •••• ${esc(l.final_chave)}<span>${esc(estado)}</span></div>
+      <div><b>BarFácil ${esc(PLANOS[l.plano] || l.plano)}</b> · ${esc((PLATAFORMAS[l.plataforma] || l.plataforma).split(' (')[0])} · •••• ${esc(l.final_chave)}<span>${esc(estado)}</span>${podeGarcom(l) || l.aux_vagas ? `<span>Aparelhos de garçom: ${l.aux_em_uso || 0} de ${l.aux_vagas || 0} em uso${podeGarcom(l) ? ` · <button type="button" class="link-button" data-garcom="${esc(l.id)}">Adicionar</button>` : ''}</span>` : ''}</div>
       <div class="estab-lic-acoes">${l.situacao === 'cancelada' ? `<button type="button" class="link-button" data-reverter="${esc(l.id)}">Reverter</button>` : l.pode_cancelar ? `<button type="button" class="link-button perigo" data-cancelar="${esc(l.id)}">Cancelar</button>` : ''}<button type="button" class="link-button muted" data-desvincular="${esc(l.id)}">Desvincular</button></div>
     </li>`;
   }
@@ -246,6 +255,55 @@
     const integ = (cfg.pagamentos || {}).pix;
     if (typeof integ === 'function') return integ(pedido);
     msg($('aviso-adquirir'), 'O pagamento por Pix está em integração. Em breve você conclui a compra por aqui, e a nova licença aparece neste estabelecimento automaticamente.');
+  });
+
+  /* ---------- adicionar aparelho de garçom (pagamento por Pix pela Asaas: integração depois) ---------- */
+  // Regras (docs/PACOTE-01 do app, item 5): entra na mesma fatura, no mesmo dia de vencimento.
+  // Agora paga só os dias até o próximo vencimento; abaixo de R$ 5,00 é cortesia.
+  const jg = $('garcom'), jgFundo = $('garcom-fundo'), fg = $('form-garcom');
+  let compraGarcom = null, focoAntesGarcom = null;
+  function proporcional(prox, valor) {
+    const fim = new Date(prox), ini = new Date(fim); ini.setMonth(ini.getMonth() - 1);
+    const total = (fim - ini) / 864e5, dias = Math.max(0, Math.min(total, Math.ceil((fim - Date.now()) / 864e5)));
+    return { dias, valor: Math.round(valor * dias / total * 100) / 100 };
+  }
+  function resumoGarcom() {
+    const l = compraGarcom && licencas.find(x => x.id === compraGarcom.licenca); if (!l) return;
+    const qtd = Math.max(1, Math.min(10, parseInt(fg.quantidade.value, 10) || 1)), unit = PRECOS.aparelho_extra;
+    if (unit == null) return ($('garcom-resumo').innerHTML = 'Valor mensal a definir.');
+    const mensal = unit * qtd, p = l.proxima_cobranca ? proporcional(l.proxima_cobranca, mensal) : null;
+    $('garcom-resumo').innerHTML = `<b>${reais(mensal)} por mês</b> a mais na sua fatura${l.proxima_cobranca ? `, a partir de ${esc(dataLonga(l.proxima_cobranca))}` : ''}.<br>`
+      + (!p ? '' : p.valor < 5 ? `Até lá: <b>cortesia</b> (${p.dias} ${p.dias === 1 ? 'dia' : 'dias'}; valores abaixo de R$ 5,00 não são cobrados).`
+        : `Agora: <b>${reais(p.valor)}</b>, só pelos ${p.dias} dias até o próximo vencimento.`);
+    compraGarcom.quantidade = qtd; compraGarcom.agora = p ? (p.valor < 5 ? 0 : p.valor) : null;
+  }
+  function abrirGarcom(id) {
+    const l = licencas.find(x => x.id === id); if (!l) return;
+    compraGarcom = { licenca: l.id }; focoAntesGarcom = document.activeElement;
+    fg.reset(); msg($('aviso-garcom'), '');
+    $('garcom-para').textContent = `BarFácil ${PLANOS[l.plano] || l.plano} · licença •••• ${l.final_chave}${l.estabelecimento_id && nomeEstab(l.estabelecimento_id) ? ' · ' + nomeEstab(l.estabelecimento_id) : ''}. Hoje: ${l.aux_em_uso || 0} de ${l.aux_vagas || 0} vagas em uso.`;
+    resumoGarcom();
+    jg.hidden = false; jgFundo.hidden = false; document.body.classList.add('no-scroll');
+    fg.quantidade.focus();
+  }
+  function fecharGarcom() {
+    if (jg.hidden) return;
+    jg.hidden = true; jgFundo.hidden = true; document.body.classList.remove('no-scroll');
+    if (focoAntesGarcom) focoAntesGarcom.focus({ preventScroll: true });
+  }
+  jg.querySelector('[data-fechar-garcom]').addEventListener('click', fecharGarcom);
+  jgFundo.addEventListener('click', fecharGarcom);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharGarcom(); });
+  fg.quantidade.addEventListener('input', resumoGarcom);
+  document.addEventListener('click', e => { const b = e.target.closest('[data-garcom]'); if (b) abrirGarcom(b.dataset.garcom); });
+  /* Ponto de integração: troque por uma chamada à função que cria a cobrança Pix na Asaas
+     (cfg.pagamentos.garcom) e mostre o QR Code; confirmado o pagamento, aumenta licenses.aux_vagas. */
+  fg.addEventListener('submit', e => {
+    e.preventDefault(); resumoGarcom();
+    const integ = (cfg.pagamentos || {}).garcom;
+    if (typeof integ === 'function') return integ({ ...compraGarcom });
+    const wa = cfg.whatsapp ? ` Por enquanto, <a href="https://wa.me/${esc(cfg.whatsapp)}" target="_blank" rel="noopener">fale com a gente pelo WhatsApp</a> e liberamos a vaga na hora.` : '';
+    const el = $('aviso-garcom'); el.innerHTML = 'O pagamento por Pix está em integração.' + wa; el.hidden = false;
   });
 
   /* ---------- downloads: instaladores (releases privadas do GitHub) e chave de cada plataforma ---------- */

@@ -1,5 +1,5 @@
 -- Licenças do BarFácil na área do cliente (area.html → Assinatura).
--- Rode DEPOIS de clientes.sql e das migrações do app (schema.sql e migration-002 a 006).
+-- Rode DEPOIS de clientes.sql e das migrações do app (schema.sql, migration-002 a 006 e migration-010).
 -- SQL Editor -> New query -> colar -> Run. Seguro para rodar mais de uma vez.
 --
 -- Como uma licença aparece para o cliente:
@@ -100,7 +100,9 @@ returns table (
   ativada boolean,
   cancelada_ate timestamptz,        -- cancelada: pode usar até essa data (dá para reverter até lá)
   pode_cancelar boolean,
-  estabelecimento_id uuid
+  estabelecimento_id uuid,
+  aux_vagas int,                    -- vagas pagas para aparelhos de garçom (migration-010 do app)
+  aux_em_uso int                    -- aparelhos de garçom conectados agora
 )
 language sql stable security definer set search_path = public as $$
   with l as (
@@ -139,7 +141,9 @@ language sql stable security definer set search_path = public as $$
     c.primeira_ativacao is not null,
     case when c.cancelada then c.cancelada_ate end,
     not c.teste and not c.vencida and not c.cancelada,
-    c.estabelecimento_id
+    c.estabelecimento_id,
+    coalesce(c.aux_vagas, 0),
+    (select count(*)::int from aux_devices d where d.license_id = c.id and d.desconectado_em is null)
   from c
   order by c.created_at;
 $$;

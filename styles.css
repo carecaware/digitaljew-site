@@ -272,6 +272,10 @@ input[type=password]::-ms-reveal,input[type=password]::-ms-clear{display:none}
 .link-button.perigo{color:#ff8a8a}
 .plan-estab{margin:16px 0 0;font-size:12.5px;color:var(--muted)}
 .plan-estab a{color:var(--cyan)}
+.plan-garcons{margin:14px 0 0;padding:12px 0 0;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted)}
+.plan-garcons b{color:var(--white)}
+.estab-lic span .link-button{display:inline;font-size:12px;padding:0}
+#garcom input[name=quantidade]{max-width:120px}
 .status-cancelada{border-color:#ff7a7a88;color:var(--red)}
 .plan-card.plan-cancelada{border-color:#ff7a7a55}
 

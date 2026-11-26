@@ -159,6 +159,20 @@
   </form>
 </div>
 
+<div class="modal-fundo" id="garcom-fundo" hidden></div>
+<div class="modal" id="garcom" role="dialog" aria-modal="true" aria-labelledby="garcom-titulo" hidden>
+  <button type="button" class="modal-fechar" data-fechar-garcom aria-label="Fechar">×</button>
+  <h2 id="garcom-titulo">Adicionar aparelho de garçom</h2>
+  <p class="step-text" id="garcom-para"></p>
+  <form id="form-garcom" novalidate>
+    <label class="field"><span>Quantos aparelhos a mais</span><input name="quantidade" type="number" min="1" max="10" value="1" inputmode="numeric"></label>
+    <p class="estab-extra" id="garcom-resumo"></p>
+    <p class="estab-extra">Depois do pagamento, conecte o celular no caixa: <b>Configurações → Aparelhos dos garçons → Conectar novo</b>. Trocar de celular é livre e não gera cobrança nova.</p>
+    <p class="dnotice dark" id="aviso-garcom" role="status" hidden></p>
+    <button class="button primary wide" type="submit">Pagar com Pix</button>
+  </form>
+</div>
+
 <!-- Painel lateral branco: dados de pagamento -->
 <div class="drawer-backdrop" id="pagamento-fundo" hidden></div>
 <aside class="drawer" id="pagamento" role="dialog" aria-modal="true" aria-labelledby="pagamento-titulo" hidden>
