@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     const repo = Deno.env.get("RELEASES_REPO") || "carecaware/releases";
     const ghHeaders = { Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "digitaljew-site" };
     const lerReleases = async (): Promise<Release[] | null> => {
-      const r = await fetch(`${GH}/repos/${repo}/releases?per_page=20`, { headers: { ...ghHeaders, Accept: "application/vnd.github+json" } });
+      const r = await fetch(`${GH}/repos/${repo}/releases?per_page=100`, { headers: { ...ghHeaders, Accept: "application/vnd.github+json" } });
       if (!r.ok) { console.error("github releases", r.status, await r.text()); return null; }
       return ((await r.json()) as Release[]).filter((x) => !x.draft && !x.prerelease)
         .sort((a, b) => String(b.published_at).localeCompare(String(a.published_at)));
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       if (!token) return json({ ok: false, motivo: "nao_configurado" }, 500);
       const rels = await lerReleases();
       if (!rels) return json({ ok: false, motivo: "github_indisponivel" }, 502);
-      const versoes = rels.slice(0, 12).map((x) => ({
+      const versoes = rels.slice(0, 100).map((x) => ({
         tag_name: x.tag_name, name: x.name, body: (x.body || "").slice(0, 4000), published_at: x.published_at,
         assets: x.assets.filter((a) => /\.(exe|msi|apk)$/i.test(a.name)).map((a) => ({ name: a.name })),
       }));
