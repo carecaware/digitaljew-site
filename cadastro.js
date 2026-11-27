@@ -20,6 +20,7 @@
   const st = { dados: null, expiraEm: 0, esperaAte: 0, timer: null };
 
   function show(step) {
+    document.documentElement.removeAttribute('data-passo');   // a partir daqui o JavaScript decide a tela
     document.querySelectorAll('.step').forEach(s => { s.hidden = s.dataset.step !== step; });
     const first = document.querySelector(`.step[data-step="${step}"] input:not([readonly])`);
     if (first && step !== 'dados') first.focus({ preventScroll: true });

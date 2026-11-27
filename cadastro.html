@@ -7,8 +7,12 @@
 <meta name="description" content="Crie sua conta na DigitalJew Software.">
 <title>Cadastro · DigitalJew Software</title>
 <link rel="icon" type="image/jpeg" href="assets/brand/digitaljew-logo.jpg">
+<link rel="preload" href="assets/fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/DMMono-latin-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
-<script>try{if(!localStorage.getItem("dj_cadastro_visto"))document.documentElement.classList.add("anim-cadastro")}catch(e){}</script>
+<script>try{if(!localStorage.getItem("dj_cadastro_visto"))document.documentElement.classList.add("anim-cadastro")}catch(e){}
+/* já desenha a tela pedida no endereço (ex.: #entrar), sem mostrar antes o formulário de cadastro */
+if(location.hash==="#entrar")document.documentElement.setAttribute("data-passo","entrar");</script>
 </head>
 <body>
 <header class="topbar" id="topo"><a class="brand" href="index.html#inicio"><img src="assets/brand/digitaljew-logo.jpg" alt="DigitalJew Software"></a><button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button><nav class="nav"><a href="index.html#produto">Produto</a><a href="index.html#downloads">Downloads</a><a href="index.html#novidades">Novidades</a><a href="area.html" aria-current="page">Área do cliente</a><a href="index.html#sobre">Sobre</a></nav><a class="nav-cta" href="area.html#downloads">Baixar BarFácil ↗</a></header>
