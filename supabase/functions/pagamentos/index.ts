@@ -113,7 +113,9 @@ Deno.serve(async (req) => {
     }
 
     // cartão: página de pagamento da própria Asaas (o cartão não passa por aqui)
-    const voltar = /^https?:\/\//.test(String(body.voltar || "")) ? String(body.voltar) : (Deno.env.get("SITE_URL") || "https://www.asaas.com");
+    // a Asaas só aceita endereço público de retorno (localhost e arquivo local não servem)
+    const publico = (u: string) => /^https:\/\/[^/]+\.[a-z]{2,}/i.test(u) && !/^https:\/\/(localhost|127\.|192\.168\.)/i.test(u);
+    const voltar = publico(String(body.voltar || "")) ? String(body.voltar) : (Deno.env.get("SITE_URL") || "https://www.asaas.com");
     const base = voltar.split("#")[0].split("?")[0];
     const co: any = {
       billingTypes: ["CREDIT_CARD"], chargeTypes: [ass ? "DETACHED" : "RECURRENT"], minutesToExpire: 60,
