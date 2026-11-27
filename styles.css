@@ -249,7 +249,7 @@ mark.preencher{background:#f8c058;color:#182838;padding:1px 6px;border-radius:2p
 /* Senhas: sem "olhinho" nativo do navegador (Edge/IE) */
 input[type=password]::-ms-reveal,input[type=password]::-ms-clear{display:none}
 /* Medidor de força: 4 barras finas */
-.pw-meter{margin:-6px 0 8px}
+.pw-meter{margin:0 0 6px}
 .pw-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .pw-bars i{height:3px;border-radius:2px;background:#ffffff1f;transition:background .2s}
 .pw-label{display:block;min-height:18px;margin-top:6px;font-size:12px;font-weight:700;color:var(--muted)}

@@ -59,7 +59,6 @@
     if (email && !validEmail(mail)) return msg(errEl, 'Digite um e-mail válido.'), form.email.focus(), null;
     if (!validPhone(whats)) return msg(errEl, 'Digite um WhatsApp válido, com DDD.'), form.whatsapp.focus(), null;
     if (!form.tipo.value) return msg(errEl, 'Escolha o tipo do seu comércio.'), form.tipo.focus(), null;
-    if (origem && !form.origem.value) return msg(errEl, 'Conte pra gente onde ouviu falar de nós.'), form.origem.focus(), null;
     msg(errEl, '');
     return { nome, email: mail.toLowerCase(), whatsapp: phoneE164(whats), tipo_comercio: form.tipo.value, origem: origem ? origemDe(form) : null };
   }

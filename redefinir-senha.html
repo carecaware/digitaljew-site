@@ -31,10 +31,10 @@
       <h2>Criar senha nova</h2>
       <p class="step-text" id="nova-texto">Escolha uma senha forte.</p>
       <form id="form-nova" novalidate>
-        <label class="field"><span>Nova senha</span><input name="senha" type="password" autocomplete="new-password" minlength="8" required aria-describedby="nova-dica"></label>
         <div class="pw-meter" id="medidor-nova"></div>
+        <label class="field"><span>Nova senha</span><input name="senha" type="password" autocomplete="new-password" minlength="8" required aria-describedby="nova-dica"></label>
         <label class="field"><span>Repita a nova senha</span><input name="repetir" type="password" autocomplete="new-password" required></label>
-        <p class="pw-tip" id="nova-dica">Dica: use uma frase com 3 ou 4 palavras que não combinam (ex.: “cavalo bateria grampo azul”). Tamanho vale mais que símbolos. Evite nomes, datas e senhas que você já usa em outros sites.</p>
+        <p class="pw-tip" id="nova-dica">Dica: use pelo menos 8 caracteres, com letras maiúsculas e minúsculas, números e caracteres especiais (como *, &amp; e %).</p>
         <p class="form-error" id="erro-nova" role="alert" hidden></p>
         <button class="button primary wide" type="submit" disabled>Salvar senha nova</button>
       </form>

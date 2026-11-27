@@ -59,7 +59,7 @@
         <form id="form-estab" class="estab-form" novalidate>
           <label class="field"><span>Nome do estabelecimento</span><input name="titulo" maxlength="80" placeholder="Ex.: Bar do Zé – Centro" required></label>
           <label class="field"><span>Endereço <em class="opcional">(opcional)</em></span><input name="endereco" maxlength="200" autocomplete="street-address" placeholder="Rua, número, bairro, cidade"></label>
-          <label class="field"><span>Tipo</span><select name="tipo" required><option value="">Selecione</option><option>Bar/pub</option><option>Boteco</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Casa noturna</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option></select></label>
+          <label class="field"><span>Tipo</span><select name="tipo" required><option value="">Selecione</option><option>Bar</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option></select></label>
           <div class="estab-form-acao"><button class="button primary" type="submit">Adicionar</button></div>
           <p class="form-error" id="erro-estab" role="alert" hidden></p>
         </form>
@@ -107,7 +107,7 @@
           <label class="field"><span>Nome completo</span><input name="nome" autocomplete="name" required></label>
           <label class="field"><span>E-mail</span><input name="email" type="email" readonly></label>
           <label class="field"><span>WhatsApp</span><input name="whatsapp" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(11) 98765-4321" required></label>
-          <label class="field"><span>Tipo de comércio</span><select name="tipo"><option value="">Selecione</option><option>Bar/pub</option><option>Boteco</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Casa noturna</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option></select></label>
+          <label class="field"><span>Tipo de comércio</span><select name="tipo"><option value="">Selecione</option><option>Bar</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option></select></label>
           <p class="form-error" id="erro-perfil" role="alert" hidden></p>
           <p class="form-ok" id="ok-perfil" role="status" hidden></p>
           <button class="button primary" type="submit">Salvar alterações</button>
@@ -117,10 +117,10 @@
         <p class="area-note" id="senha-google" hidden>Você entra com a sua conta Google, então não há senha para trocar aqui.</p>
         <form id="form-trocar-senha" class="area-form" novalidate hidden>
           <label class="field"><span>Senha atual</span><input name="atual" type="password" autocomplete="current-password" required></label>
-          <label class="field"><span>Nova senha</span><input name="nova" type="password" autocomplete="new-password" minlength="8" required aria-describedby="trocar-dica"></label>
           <div class="pw-meter" id="medidor-trocar"></div>
+          <label class="field"><span>Nova senha</span><input name="nova" type="password" autocomplete="new-password" minlength="8" required aria-describedby="trocar-dica"></label>
           <label class="field"><span>Repita a nova senha</span><input name="repetir" type="password" autocomplete="new-password" required></label>
-          <p class="pw-tip" id="trocar-dica">Dica: use uma frase com 3 ou 4 palavras que não combinam (ex.: “cavalo bateria grampo azul”). Tamanho vale mais que símbolos. Evite nomes, datas e senhas que você já usa em outros sites.</p>
+          <p class="pw-tip" id="trocar-dica">Dica: use pelo menos 8 caracteres, com letras maiúsculas e minúsculas, números e caracteres especiais (como *, &amp; e %).</p>
           <p class="form-error" id="erro-senha" role="alert" hidden></p>
           <p class="form-ok" id="ok-senha" role="status" hidden></p>
           <button class="button primary" type="submit" disabled>Trocar senha</button>

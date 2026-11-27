@@ -40,11 +40,11 @@ if(location.hash==="#entrar")document.documentElement.setAttribute("data-passo",
         <label class="field"><span>Tipo de comércio</span>
           <select name="tipo" required>
             <option value="">Selecione</option>
-            <option>Bar/pub</option><option>Boteco</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Casa noturna</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option>
+            <option>Bar</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option>
           </select>
         </label>
-        <label class="field"><span>Onde ouviu falar de nós?</span>
-          <select name="origem" required>
+        <label class="field"><span>Onde ouviu falar de nós? <em class="opcional">(opcional)</em></span>
+          <select name="origem">
             <option value="">Selecione</option>
             <option>Instagram</option><option>Facebook</option><option>TikTok</option><option>YouTube</option>
             <option>Pesquisa no Google</option><option>Indicação de amigo ou conhecido</option><option>Outro</option>
@@ -94,9 +94,9 @@ if(location.hash==="#entrar")document.documentElement.setAttribute("data-passo",
       <h2>Crie sua senha</h2>
       <p class="step-text">E-mail confirmado! Agora crie uma senha forte. É com ela e com o seu e-mail que você vai entrar daqui em diante.</p>
       <form id="form-senha" novalidate>
-        <label class="field"><span>Nova senha</span><input name="senha" type="password" autocomplete="new-password" minlength="8" required aria-describedby="senha-dica"></label>
         <div class="pw-meter" id="medidor-senha"></div>
-        <p class="pw-tip" id="senha-dica">Dica: use uma frase com 3 ou 4 palavras que não combinam (ex.: “cavalo bateria grampo azul”). Tamanho vale mais que símbolos. Evite nomes, datas e senhas que você já usa em outros sites.</p>
+        <label class="field"><span>Nova senha</span><input name="senha" type="password" autocomplete="new-password" minlength="8" required aria-describedby="senha-dica"></label>
+        <p class="pw-tip" id="senha-dica">Dica: use pelo menos 8 caracteres, com letras maiúsculas e minúsculas, números e caracteres especiais (como *, &amp; e %).</p>
         <p class="form-error" id="erro-senha" role="alert" hidden></p>
         <button class="button primary wide" type="submit" disabled>Salvar senha e concluir</button>
       </form>
@@ -113,7 +113,7 @@ if(location.hash==="#entrar")document.documentElement.setAttribute("data-passo",
         <label class="field"><span>Tipo de comércio</span>
           <select name="tipo" required>
             <option value="">Selecione</option>
-            <option>Bar/pub</option><option>Boteco</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Casa noturna</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option>
+            <option>Bar</option><option>Pizzaria</option><option>Restaurante</option><option>Lanchonete</option><option>Hamburgueria</option><option>Adega</option><option>Distribuidora de bebidas</option><option>Choperia/cervejaria</option><option>Cafeteria</option><option>Padaria</option><option>Quiosque/barraca de praia</option><option>Food truck</option><option>Outro</option>
           </select>
         </label>
         <p class="form-error" id="erro-completar" role="alert" hidden></p>

@@ -33,35 +33,35 @@ window.DJ = (() => {
   }
 
   /* ---------- força da senha ----------
-   * Segue as recomendações atuais (NIST SP 800-63B): o que mais pesa é o TAMANHO; não exige
-   * símbolos obrigatórios; derruba senhas comuns, sequências, repetições e dados pessoais.
+   * Combina com a dica mostrada ao cliente: pelo menos 8 caracteres, com letras maiúsculas e
+   * minúsculas, números e caracteres especiais. Senhas comuns, sequências (1234, abcd),
+   * repetições (aaaa) e pedaços do nome ou do e-mail não contam.
    * Níveis: 0 vazio · 1 fraca · 2 média · 3 forte · 4 muito forte. Mínimo aceito: 2 (média). */
   const COMUNS = new Set(['123456','1234567','12345678','123456789','1234567890','12345','111111','000000','123123','102030','senha','senha123','senha1234','password','password1','qwerty','qwerty123','abc123','abcd1234','iloveyou','admin','admin123','welcome','bemvindo','brasil','flamengo','corinthians','palmeiras','saopaulo','vasco','gremio','cruzeiro','santos','botafogo','fluminense','internacional','mudar123','teste123','minhasenha','amor','jesus','deus','familia','futebol','barfacil','digitaljew','pizzaria','restaurante','cerveja','boteco']);
   function forcaSenha(pw, pessoais = []) {
     pw = String(pw || '');
     if (!pw) return 0;
-    const chars = [...pw];
-    if (chars.length < 8) return 1;
-    let base = pw.toLowerCase();
-    const sem = base.replace(/[^a-zà-ú]/g, '');
-    if (COMUNS.has(base) || (sem.length >= 4 && COMUNS.has(sem) && sem.length >= base.length - 4)) return 1;
-    // tira pedaços pessoais (nome, e-mail) antes de medir
+    if ([...pw].length < 8) return 1;
+    const minus = pw.toLowerCase(), sem = minus.replace(/[^a-zà-ú]/g, '');
+    if (COMUNS.has(minus) || (sem.length >= 4 && COMUNS.has(sem) && sem.length >= minus.length - 4)) return 1;
+    // tira pedaços pessoais (nome, e-mail) e conta só o que sobra de "novo"
+    let base = minus;
     for (const p of pessoais.map(x => String(x || '').toLowerCase()).flatMap(x => x.split(/[\s@._-]+/)).filter(x => x.length >= 3))
       base = base.split(p).join('');
-    // repetições e sequências (aaaa, 1234, abcd) quase não somam
     let efetivo = 0, ant = null;
     for (const c of [...base]) {
       const k = c.codePointAt(0);
       if (ant === null || (k !== ant && Math.abs(k - ant) !== 1)) efetivo += 1;
       ant = k;
     }
-    let pool = 0;
-    if (/[a-zà-ú]/.test(pw)) pool += 26;
-    if (/[A-ZÀ-Ú]/.test(pw)) pool += 26;
-    if (/\d/.test(pw)) pool += 10;
-    if (/[^a-zA-Zà-úÀ-Ú\d]/.test(pw)) pool += 33;
-    const bits = efetivo * Math.log2(Math.max(pool, 10));
-    return bits < 45 ? 1 : bits < 60 ? 2 : bits < 80 ? 3 : 4;
+    if (efetivo < 6) return 1;
+    // tipos de caractere usados: minúsculas, maiúsculas, números, especiais
+    const tipos = [/[a-zà-ú]/, /[A-ZÀ-Ú]/, /\d/, /[^a-zA-Zà-úÀ-Ú\d]/].filter(r => r.test(pw)).length;
+    const tam = [...pw].length;
+    if (tipos >= 4) return tam >= 12 ? 4 : 3;      // ex.: Bar&Zé2026 -> forte
+    if (tipos === 3) return tam >= 14 ? 4 : tam >= 10 ? 3 : 2;
+    if (tipos === 2) return tam >= 16 ? 3 : 2;
+    return tam >= 20 ? 3 : tam >= 14 ? 2 : 1;       // frase longa só com letras ainda vale
   }
   const NIVEIS = ['', 'Fraca', 'Média', 'Forte', 'Muito forte'];
   /* Liga um campo de senha a um medidor: <div class="pw-meter"> com 4 barras e um rótulo. */
