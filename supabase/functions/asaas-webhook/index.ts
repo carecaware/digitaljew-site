@@ -40,6 +40,14 @@ Deno.serve(async (req) => {
 async function pedidoDoPagamento(sb: any, p: any) {
   const ref = String(p.externalReference || "");
   if (ref.startsWith("pedido:")) return ref.slice(7);
+  // cartão pela página da Asaas: a cobrança traz o id do Checkout; o cliente criado lá passa a ser o desta conta
+  if (p.checkoutSession) {
+    const { data: ped } = await sb.from("pedidos").select("id, cliente_id").eq("asaas_checkout_id", p.checkoutSession).maybeSingle();
+    if (ped) {
+      if (p.customer) await sb.from("clientes").update({ asaas_customer_id: p.customer }).eq("id", ped.cliente_id);
+      return ped.id;
+    }
+  }
   // cartão: cobrança gerada pelo Checkout (a referência fica no Checkout); acha o pedido pelo cliente
   if (p.subscription && p.customer) {
     const { data: cli } = await sb.from("clientes").select("id").eq("asaas_customer_id", p.customer).maybeSingle();
@@ -61,30 +69,8 @@ async function processar(sb: any, ev: any) {
     if (id) await sb.from("pedidos").update({ status: tipo === "CHECKOUT_EXPIRED" ? "expirado" : "cancelado" }).eq("asaas_checkout_id", id).eq("status", "aguardando");
     return;
   }
-  if (tipo === "CHECKOUT_PAID") {
-    // cartão pela página da Asaas: liga o pedido ao cliente e à cobrança (e à assinatura) criados por ela
-    const co = ev.checkout || {};
-    const { data: ped } = await sb.from("pedidos").select("id, cliente_id, status").eq("asaas_checkout_id", co.id).maybeSingle();
-    if (!ped || ped.status !== "aguardando") return;
-    let customer = co.customer;
-    if (!customer) {
-      const { data: cli } = await sb.from("clientes").select("asaas_customer_id").eq("id", ped.cliente_id).single();
-      const antigo = cli && cli.asaas_customer_id ? await asaas("GET", `/customers/${cli.asaas_customer_id}`) : null;
-      if (antigo && antigo.cpfCnpj) {
-        const l = await asaas("GET", `/customers?cpfCnpj=${antigo.cpfCnpj}&limit=10`);
-        const novos = (l.data || []).sort((a: any, b: any) => String(b.dateCreated).localeCompare(String(a.dateCreated)));
-        if (novos[0]) customer = novos[0].id;
-      }
-    }
-    if (!customer) throw new Error("checkout pago sem cliente identificado");
-    await sb.from("clientes").update({ asaas_customer_id: customer }).eq("id", ped.cliente_id);
-    const pgs = await asaas("GET", `/payments?customer=${customer}&limit=20`);
-    const pago = (pgs.data || []).filter((x: any) => ["CONFIRMED", "RECEIVED"].includes(x.status))
-      .sort((a: any, b: any) => String(b.dateCreated).localeCompare(String(a.dateCreated)))[0];
-    if (!pago) throw new Error("checkout pago sem cobrança confirmada ainda");   // a Asaas reenvia
-    await aplicarPedido(sb, ped.id, pago);
-    return;
-  }
+  // CHECKOUT_PAID chega antes da cobrança ser confirmada: quem resolve é o PAYMENT_CONFIRMED (que traz o checkoutSession)
+  if (tipo === "CHECKOUT_PAID") return;
   const p = ev.payment;
   if (!p || !p.id) return;
   const statusFatura: Record<string, string> = { PAYMENT_OVERDUE: "vencida", PAYMENT_REFUNDED: "estornada", PAYMENT_DELETED: "removida",
