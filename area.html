@@ -38,6 +38,7 @@
         <div class="kicker">01 / MINHA ASSINATURA</div>
         <h1>Assinatura</h1>
         <div id="assinaturas"></div>
+        <div id="fatura"></div>
         <div class="empty-box" id="sem-assinatura" hidden>
           <h3>Não encontramos licenças do BarFácil na sua conta.</h3>
           <p>Elas aparecem aqui quando a licença está ligada ao seu e-mail. Se você já tem uma chave, fale com a gente para ligá-la à sua conta. Se ainda não tem, baixe o app e comece pelo período de teste.</p>
@@ -153,9 +154,15 @@
       <label class="opcao"><input type="radio" name="plataforma" value="windows" checked><span><b>Windows</b><small>Computador do caixa</small></span></label>
       <label class="opcao"><input type="radio" name="plataforma" value="mobile"><span><b>Android</b><small>Celular ou tablet</small></span></label>
     </fieldset>
+    <fieldset class="opcoes"><legend>Forma de pagamento</legend>
+      <label class="opcao"><input type="radio" name="forma" value="PIX" checked><span><b>Pix</b><small>QR Code agora; depois, o Pix de cada mês chega por e-mail</small></span></label>
+      <label class="opcao"><input type="radio" name="forma" value="CREDIT_CARD"><span><b>Cartão de crédito</b><small>Cobrado sozinho todo mês, na página segura da Asaas</small></span></label>
+    </fieldset>
+    <label class="field" data-cpf hidden><span>CPF ou CNPJ de quem paga</span><input name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00"></label>
+    <p class="estab-extra" id="adquirir-resumo"></p>
     <p class="estab-extra" id="preco-extra"></p>
     <p class="dnotice dark" id="aviso-adquirir" role="status" hidden></p>
-    <button class="button primary wide" type="submit">Pagar com Pix</button>
+    <button class="button primary wide" type="submit">Continuar para o pagamento</button>
   </form>
 </div>
 
@@ -168,9 +175,28 @@
     <label class="field"><span>Quantos aparelhos a mais</span><input name="quantidade" type="number" min="1" max="10" value="1" inputmode="numeric"></label>
     <p class="estab-extra" id="garcom-resumo"></p>
     <p class="estab-extra">Depois do pagamento, conecte o celular no caixa: <b>Configurações → Aparelhos dos garçons → Conectar novo</b>. Trocar de celular é livre e não gera cobrança nova.</p>
+    <fieldset class="opcoes"><legend>Forma de pagamento</legend>
+      <label class="opcao"><input type="radio" name="forma" value="PIX" checked><span><b>Pix</b><small>QR Code agora; depois, o Pix de cada mês chega por e-mail</small></span></label>
+      <label class="opcao"><input type="radio" name="forma" value="CREDIT_CARD"><span><b>Cartão de crédito</b><small>Cobrado sozinho todo mês, na página segura da Asaas</small></span></label>
+    </fieldset>
+    <label class="field" data-cpf hidden><span>CPF ou CNPJ de quem paga</span><input name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00"></label>
     <p class="dnotice dark" id="aviso-garcom" role="status" hidden></p>
-    <button class="button primary wide" type="submit">Pagar com Pix</button>
+    <button class="button primary wide" type="submit">Continuar para o pagamento</button>
   </form>
+</div>
+
+<div class="modal-fundo" id="pix-fundo" hidden></div>
+<div class="modal" id="pix" role="dialog" aria-modal="true" aria-labelledby="pix-titulo" hidden>
+  <button type="button" class="modal-fechar" data-fechar-pix aria-label="Fechar">×</button>
+  <h2 id="pix-titulo">Pague com Pix</h2>
+  <p class="step-text" id="pix-desc"></p>
+  <div class="pix-qr" id="pix-qr"></div>
+  <div class="pix-cola" id="pix-cola-box" hidden>
+    <label class="field"><span>Pix copia e cola</span><textarea id="pix-cola" rows="3" readonly></textarea></label>
+    <button type="button" class="button wide" id="pix-copiar">Copiar código</button>
+  </div>
+  <p class="estab-extra"><a id="pix-link" href="#" target="_blank" rel="noopener">Abrir a página da cobrança na Asaas</a></p>
+  <p class="dnotice dark" id="pix-status" role="status">Aguardando o pagamento… Esta janela atualiza sozinha.</p>
 </div>
 
 <!-- Painel lateral branco: dados de pagamento -->
@@ -182,11 +208,14 @@
   </div>
 
   <div class="drawer-body">
-    <h3>Cartões salvos</h3>
-    <div class="cards-empty" id="cartoes-salvos">Nenhum cartão cadastrado ainda.</div>
-
-    <h3>Adicionar cartão de crédito</h3>
-    <form id="form-cartao" novalidate autocomplete="on">
+    <h3>Forma de pagamento da mensalidade</h3>
+    <div class="cards-empty" id="forma-atual">Você ainda não tem mensalidade ativa.</div>
+    <p class="dfine">A forma de pagamento é escolhida na compra (em <b>Meus estabelecimentos</b>):</p>
+    <p class="dfine"><b>Pix:</b> o QR Code aparece aqui na hora; depois, o Pix de cada mês chega por e-mail alguns dias antes do vencimento.</p>
+    <p class="dfine"><b>Cartão de crédito:</b> você digita o cartão na página segura da Asaas, nossa parceira de pagamentos, e a mensalidade é cobrada sozinha todo mês. A DigitalJew não vê nem guarda os dados do cartão.</p>
+    <p class="dfine">Para trocar a forma de pagamento ou o cartão, fale com a gente pelo WhatsApp.</p>
+    <div id="cartoes-salvos" hidden></div>
+    <form id="form-cartao" novalidate autocomplete="on" hidden>
       <label class="dfield"><span>Número do cartão</span>
         <span class="card-input"><input name="numero" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23"><b class="card-brand" id="bandeira" aria-live="polite"></b></span>
       </label>

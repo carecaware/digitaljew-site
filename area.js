@@ -85,6 +85,10 @@
   }
 
   function acoesLicenca(l) {
+    const chave = l.plano !== 'teste' ? `<button type="button" class="link-button" data-ver-chave="${esc(l.id)}">Ver chave</button>` : '';
+    if (l.situacao === 'cancelada') return `<div class="plan-acoes">${chave}<button type="button" class="link-button" data-reverter="${esc(l.id)}">Reverter cancelamento</button></div>`;
+    if (l.pode_cancelar) return `<div class="plan-acoes">${chave}<button type="button" class="link-button perigo" data-cancelar="${esc(l.id)}">Cancelar assinatura</button></div>`;
+    if (chave) return `<div class="plan-acoes">${chave}</div>`;
     if (l.situacao === 'cancelada') return `<div class="plan-acoes"><button type="button" class="link-button" data-reverter="${esc(l.id)}">Reverter cancelamento</button></div>`;
     if (l.pode_cancelar) return `<div class="plan-acoes"><button type="button" class="link-button perigo" data-cancelar="${esc(l.id)}">Cancelar assinatura</button></div>`;
     return '';
@@ -138,6 +142,7 @@
       const { data, error } = await sb.rpc('cancelar_assinatura', { p_licenca: id });
       busy(bc, false);
       if (error) { console.error(error); return avisar('Não foi possível cancelar agora. Tente de novo em instantes.', onde); }
+      sincronizarMensalidade();
       await carregarAssinaturas();
       avisar(new Date(data) > new Date() ? `Assinatura cancelada. Você pode usar o BarFácil até ${dataLonga(data)}.` : 'Assinatura cancelada.', onde);
     } else {
@@ -145,6 +150,7 @@
       const { error } = await sb.rpc('reverter_cancelamento', { p_licenca: id });
       busy(br, false);
       if (error) { console.error(error); return avisar('Não foi possível reverter agora. Tente de novo em instantes.', onde); }
+      sincronizarMensalidade();
       await carregarAssinaturas();
       avisar(`Cancelamento revertido. O ${nome} continua ativo normalmente.`, onde);
     }
@@ -228,13 +234,22 @@
   /* ---------- adquirir BarFácil (pagamento por Pix pela Asaas: integração depois) ---------- */
   const ja = $('adquirir'), jaFundo = $('adquirir-fundo'), fa = $('form-adquirir');
   let compra = null, focoAntesCompra = null;
-  document.querySelectorAll('[data-preco]').forEach(el => { const v = PRECOS[el.dataset.preco]; el.textContent = v != null ? `${reais(v)} por mês` : 'Valor mensal a definir'; });
-  if (PRECOS.aparelho_extra != null) $('preco-extra').textContent = `Cada aparelho a mais no mesmo estabelecimento: + ${reais(PRECOS.aparelho_extra)} por mês.`;
+  function mostrarPrecos() {
+    document.querySelectorAll('[data-preco]').forEach(el => { const v = PRECOS[el.dataset.preco]; el.textContent = v != null ? `${reais(v)} por mês` : 'Valor mensal a definir'; });
+    if (PRECOS.aparelho_extra != null) $('preco-extra').textContent = `Cada aparelho de garçom no mesmo estabelecimento: + ${reais(PRECOS.aparelho_extra)} por mês.`;
+  }
+  mostrarPrecos();
+  // os preços cobrados são os do banco (tabela precos); o config.js fica só de reserva
+  sb.from('precos').select('chave, valor').then(({ data }) => {
+    (data || []).forEach(r => { PRECOS[r.chave === 'garcom' ? 'aparelho_extra' : r.chave] = Number(r.valor); });
+    mostrarPrecos(); resumoAdquirir();
+  });
   function abrirAdquirir(estabId) {
     const est = estabs.find(x => x.id === estabId); if (!est) return;
     compra = { estabelecimento_id: est.id }; focoAntesCompra = document.activeElement;
     fa.reset(); msg($('aviso-adquirir'), '');
-    $('adquirir-para').textContent = `Para ${est.titulo}. Escolha o plano e onde o app vai ser usado.`;
+    $('adquirir-para').textContent = `Para ${est.titulo}. Escolha o plano, onde o app vai ser usado e como pagar.`;
+    prepararPagamento(fa); resumoAdquirir();
     ja.hidden = false; jaFundo.hidden = false; document.body.classList.add('no-scroll');
     fa.querySelector('input[name=plano]:checked').focus();
   }
@@ -246,15 +261,20 @@
   ja.querySelector('[data-fechar-adquirir]').addEventListener('click', fecharAdquirir);
   jaFundo.addEventListener('click', fecharAdquirir);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharAdquirir(); });
-  /* Ponto de integração: troque por uma chamada à função que cria a cobrança Pix na Asaas
-     (cfg.pagamentos.pix) e mostre o QR Code; quando o pagamento for confirmado, a licença é criada
-     já ligada a este estabelecimento. */
-  fa.addEventListener('submit', async e => {
+  // quanto paga agora: 1ª compra paga o mês; com mensalidade já ativa, só os dias até o vencimento
+  function resumoAdquirir() {
+    if (ja.hidden) return;
+    const v = PRECOS[fa.plano.value]; if (v == null) return ($('adquirir-resumo').textContent = '');
+    const a = fatura && fatura.assinatura && fatura.assinatura.status === 'ativa' ? fatura.assinatura : null;
+    if (!a) return ($('adquirir-resumo').innerHTML = `Agora: <b>${reais(v)}</b> (1º mês). Depois, ${reais(v)} por mês, sempre no mesmo dia.`);
+    const p = proporcional(v, a.vencimento);
+    $('adquirir-resumo').innerHTML = `Entra na sua fatura do dia ${a.dia}: + <b>${reais(v)} por mês</b>.<br>`
+      + (p.valor < 5 ? `Até lá: <b>cortesia</b> (valores abaixo de R$ 5,00 não são cobrados).` : `Agora: <b>${reais(p.valor)}</b>, só pelos ${p.dias} dias até o próximo vencimento.`);
+  }
+  fa.addEventListener('change', resumoAdquirir);
+  fa.addEventListener('submit', e => {
     e.preventDefault();
-    const pedido = { ...compra, plano: fa.plano.value, plataforma: fa.plataforma.value };
-    const integ = (cfg.pagamentos || {}).pix;
-    if (typeof integ === 'function') return integ(pedido);
-    msg($('aviso-adquirir'), 'O pagamento por Pix está em integração. Em breve você conclui a compra por aqui, e a nova licença aparece neste estabelecimento automaticamente.');
+    pagar({ tipo: 'licenca', estabelecimento_id: compra.estabelecimento_id, plano: fa.plano.value, plataforma: fa.plataforma.value }, fa, 'aviso-adquirir', fecharAdquirir);
   });
 
   /* ---------- adicionar aparelho de garçom (pagamento por Pix pela Asaas: integração depois) ---------- */
@@ -280,7 +300,7 @@
   function abrirGarcom(id) {
     const l = licencas.find(x => x.id === id); if (!l) return;
     compraGarcom = { licenca: l.id }; focoAntesGarcom = document.activeElement;
-    fg.reset(); msg($('aviso-garcom'), '');
+    fg.reset(); msg($('aviso-garcom'), ''); prepararPagamento(fg);
     $('garcom-para').textContent = `BarFácil ${PLANOS[l.plano] || l.plano} · licença •••• ${l.final_chave}${l.estabelecimento_id && nomeEstab(l.estabelecimento_id) ? ' · ' + nomeEstab(l.estabelecimento_id) : ''}. Hoje: ${l.aux_em_uso || 0} de ${l.aux_vagas || 0} vagas em uso.`;
     resumoGarcom();
     jg.hidden = false; jgFundo.hidden = false; document.body.classList.add('no-scroll');
@@ -296,14 +316,124 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharGarcom(); });
   fg.quantidade.addEventListener('input', resumoGarcom);
   document.addEventListener('click', e => { const b = e.target.closest('[data-garcom]'); if (b) abrirGarcom(b.dataset.garcom); });
-  /* Ponto de integração: troque por uma chamada à função que cria a cobrança Pix na Asaas
-     (cfg.pagamentos.garcom) e mostre o QR Code; confirmado o pagamento, aumenta licenses.aux_vagas. */
   fg.addEventListener('submit', e => {
     e.preventDefault(); resumoGarcom();
-    const integ = (cfg.pagamentos || {}).garcom;
-    if (typeof integ === 'function') return integ({ ...compraGarcom });
-    const wa = cfg.whatsapp ? ` Por enquanto, <a href="https://wa.me/${esc(cfg.whatsapp)}" target="_blank" rel="noopener">fale com a gente pelo WhatsApp</a> e liberamos a vaga na hora.` : '';
-    const el = $('aviso-garcom'); el.innerHTML = 'O pagamento por Pix está em integração.' + wa; el.hidden = false;
+    pagar({ tipo: 'garcom', licenca_id: compraGarcom.licenca, quantidade: compraGarcom.quantidade }, fg, 'aviso-garcom', fecharGarcom);
+  });
+
+  /* ---------- pagamentos (Asaas): Pix com QR Code aqui; cartão na página segura da Asaas ---------- */
+  let fatura = null, temCadastroAsaas = true, pixTimer = null, pixPedido = null;
+  const sincronizarMensalidade = () => sb.functions.invoke('pagamentos', { body: { acao: 'sincronizar' } }).then(() => carregarFatura()).catch(() => {});
+  // o CPF/CNPJ só é pedido na primeira compra (depois fica guardado na Asaas)
+  function prepararPagamento(form) {
+    const campo = form.querySelector('[data-cpf]'); if (campo) campo.hidden = temCadastroAsaas;
+  }
+  async function pagar(corpo, form, avisoId, fechar) {
+    const botao = form.querySelector('button[type="submit"]'), aviso = $(avisoId);
+    corpo.acao = 'iniciar'; corpo.forma = form.forma.value; corpo.voltar = location.href.split('#')[0].split('?')[0];
+    const campo = form.querySelector('[data-cpf]');
+    if (campo && !campo.hidden) {
+      const doc = digits(form.cpf.value);
+      if (doc.length !== 11 && doc.length !== 14) { msg(aviso, 'Digite o CPF (11 números) ou o CNPJ (14 números) de quem paga.'); return form.cpf.focus(); }
+      corpo.cpf_cnpj = doc;
+    }
+    msg(aviso, ''); busy(botao, true, corpo.forma === 'CREDIT_CARD' ? 'Abrindo a página de pagamento…' : 'Gerando o Pix…');
+    const { data, error } = await sb.functions.invoke('pagamentos', { body: corpo });
+    busy(botao, false);
+    if (error || !data) { console.error(error); return msg(aviso, 'Não foi possível iniciar o pagamento agora. Tente de novo em instantes.'); }
+    if (!data.ok) {
+      if (data.precisa_cpf && campo) { temCadastroAsaas = false; campo.hidden = false; form.cpf.focus(); }
+      return msg(aviso, data.mensagem || 'Não foi possível iniciar o pagamento agora.');
+    }
+    temCadastroAsaas = true;
+    if (data.cortesia) {
+      fechar(); await Promise.all([carregarAssinaturas(), carregarFatura()]);
+      return avisar(`Pronto! Liberado sem custo até o próximo vencimento (cortesia). A partir dele, entra na sua fatura: + ${reais(data.mensal)} por mês.`, telaAtual === 'estabelecimentos' ? 'ok-estab' : 'ok-assinatura');
+    }
+    if (corpo.forma === 'CREDIT_CARD') { location.href = data.link; return; }
+    fechar(); abrirPix(data);
+  }
+  const jp = $('pix'), jpFundo = $('pix-fundo');
+  function abrirPix(d) {
+    pixPedido = d.pedido_id;
+    $('pix-desc').innerHTML = `Valor: <strong>${reais(d.valor)}</strong>${d.dias ? ` (proporcional: ${d.dias} dias)` : ''}. Assim que o pagamento cair, a compra é liberada aqui.`;
+    $('pix-qr').innerHTML = d.pix && d.pix.imagem ? `<img src="data:image/png;base64,${d.pix.imagem}" alt="QR Code do Pix">` : '<p class="estab-extra">O QR Code não pôde ser mostrado aqui. Pague pela página da cobrança, no link abaixo.</p>';
+    $('pix-cola-box').hidden = !(d.pix && d.pix.payload); $('pix-cola').value = (d.pix && d.pix.payload) || '';
+    $('pix-link').href = d.link || '#'; $('pix-link').hidden = !d.link;
+    $('pix-status').textContent = 'Aguardando o pagamento… Esta janela atualiza sozinha.';
+    jp.hidden = false; jpFundo.hidden = false; document.body.classList.add('no-scroll');
+    clearInterval(pixTimer); pixTimer = setInterval(conferirPix, 4000);
+  }
+  async function conferirPix() {
+    if (!pixPedido) return;
+    const { data } = await sb.functions.invoke('pagamentos', { body: { acao: 'status', pedido_id: pixPedido } });
+    if (data && (data.status === 'pago' || data.status === 'cortesia')) {
+      clearInterval(pixTimer); pixPedido = null;
+      $('pix-status').innerHTML = '<b>Pagamento confirmado!</b> Pode fechar esta janela.';
+      await Promise.all([carregarAssinaturas(), carregarFatura()]);
+    }
+  }
+  function fecharPix() {
+    if (jp.hidden) return;
+    clearInterval(pixTimer); pixPedido = null;
+    jp.hidden = true; jpFundo.hidden = true; document.body.classList.remove('no-scroll');
+  }
+  jp.querySelector('[data-fechar-pix]').addEventListener('click', fecharPix);
+  jpFundo.addEventListener('click', fecharPix);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharPix(); });
+  $('pix-copiar').addEventListener('click', async () => {
+    const t = $('pix-cola'); try { await navigator.clipboard.writeText(t.value); } catch (_e) { t.select(); document.execCommand('copy'); }
+    $('pix-copiar').textContent = 'Copiado!'; setTimeout(() => { $('pix-copiar').textContent = 'Copiar código'; }, 2000);
+  });
+
+  // próxima fatura (itens) e pagamentos anteriores
+  const STATUS_FATURA = { paga: 'Paga', pendente: 'Em aberto', vencida: 'Vencida', estornada: 'Estornada', removida: 'Cancelada' };
+  const dataCurta = d => d ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(new Date(String(d).slice(0, 10) + 'T12:00:00Z')) : '';
+  async function carregarFatura() {
+    const { data, error } = await sb.rpc('minha_fatura');
+    if (error) { console.error(error); return; }
+    fatura = data; renderFatura(); resumoAdquirir();
+    const a = data && data.assinatura && data.assinatura.status === 'ativa' ? data.assinatura : null;
+    $('forma-atual').textContent = a ? `${a.forma === 'CREDIT_CARD' ? 'Cartão de crédito (cobrança automática)' : 'Pix'} · vence todo dia ${a.dia}` : 'Você ainda não tem mensalidade ativa.';
+  }
+  function renderFatura() {
+    const f = fatura, box = $('fatura');
+    if (!f || (!f.assinatura && !(f.historico || []).length)) return (box.innerHTML = '');
+    const a = f.assinatura && f.assinatura.status === 'ativa' ? f.assinatura : null;
+    const itens = (f.itens || []).map(i => `<li><span>${esc(i.descricao)}</span><b>${reais(i.valor)}</b></li>`).join('');
+    const hist = (f.historico || []).map(h => `<li><span>${esc(dataCurta(h.pago_em || h.vencimento))} · ${esc(h.descricao)}</span>`
+      + `<span class="fat-st st-${esc(h.status)}">${esc(STATUS_FATURA[h.status] || h.status)}</span><b>${reais(h.valor)}</b>${h.link ? ` <a href="${esc(h.link)}" target="_blank" rel="noopener">ver</a>` : ''}</li>`).join('');
+    box.innerHTML = `<article class="plan-card fatura-card">
+      <div class="plan-top"><span class="plan-label">MENSALIDADE</span>${a ? `<span class="plan-status status-ativa">${a.forma === 'CREDIT_CARD' ? 'Cartão de crédito' : 'Pix'}</span>` : ''}</div>
+      ${a ? `<h2>Próxima fatura <span>${reais(f.total)}</span></h2><p class="plan-estab">Vence em ${esc(dataLonga(a.vencimento + 'T12:00:00'))} · todo dia ${a.dia}${a.forma === 'PIX' ? '. O Pix chega por e-mail alguns dias antes.' : '. Cobrada sozinha no cartão.'}</p>
+        <ul class="fat-itens">${itens}</ul>` : '<p class="plan-estab">Nenhuma mensalidade ativa no momento.</p>'}
+      ${hist ? `<details class="fat-hist"><summary>Pagamentos anteriores</summary><ul>${hist}</ul></details>` : ''}
+    </article>`;
+  }
+  function proporcional(mensal, venc) {
+    const fim = new Date(venc + 'T12:00:00Z'), ini = new Date(fim); ini.setUTCMonth(ini.getUTCMonth() - 1);
+    const hoje = new Date(new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10) + 'T12:00:00Z');
+    const ciclo = Math.round((fim - ini) / 864e5), dias = Math.max(0, Math.min(ciclo, Math.round((fim - hoje) / 864e5)));
+    return { dias, valor: Math.round(mensal * dias / ciclo * 100) / 100 };
+  }
+  // voltou da página de pagamento do cartão
+  (function voltaDoCartao() {
+    const q = new URLSearchParams(location.search).get('pagamento'); if (!q) return;
+    history.replaceState(null, '', location.pathname + location.hash);
+    const txt = { ok: 'Pagamento enviado! A confirmação chega em instantes e a compra aparece aqui sozinha.', cancelado: 'Pagamento cancelado. Nada foi cobrado.', expirado: 'A página de pagamento expirou. Nada foi cobrado; é só começar de novo.' }[q];
+    if (txt) setTimeout(() => avisar(txt), 600);
+    if (q === 'ok') [4000, 10000, 20000].forEach(t => setTimeout(() => { carregarAssinaturas(); carregarFatura(); }, t));
+  })();
+
+  // chave completa de uma licença paga (para ativar o app)
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-ver-chave]'); if (!b) return;
+    busy(b, true, '…');
+    const { data, error } = await sb.rpc('chave_da_licenca', { p_licenca: b.dataset.verChave });
+    busy(b, false);
+    if (error || !data) return avisar('Não foi possível mostrar a chave agora.');
+    const span = document.createElement('code'); span.className = 'chave-lic'; span.textContent = data;
+    b.replaceWith(span);
   });
 
   /* ---------- downloads: instaladores (releases privadas do GitHub) e chave de cada plataforma ---------- */
@@ -601,7 +731,9 @@
     $('area-conteudo').hidden = false;
     rota();
     carregarAssinaturas();
+    carregarFatura();
     carregarDownloads();
+    sb.from('clientes').select('asaas_customer_id').eq('id', user.id).maybeSingle().then(({ data }) => { temCadastroAsaas = !!(data && data.asaas_customer_id); });
   }
   iniciar();
 })();

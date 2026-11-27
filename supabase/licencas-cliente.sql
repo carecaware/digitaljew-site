@@ -66,6 +66,15 @@ begin
   return null;
 end $$;
 
+-- Próxima cobrança de uma licença. Versão base: pelo dia em que a cobrança começou.
+-- pagamentos.sql substitui esta função para usar o vencimento da assinatura na Asaas.
+create or replace function proxima_cobranca_licenca(lic licenses, desde timestamptz) returns timestamptz
+language plpgsql stable security definer set search_path = public as $$
+begin
+  return case when desde is null then null else proxima_data_cobranca(desde) end;
+end $$;
+revoke all on function proxima_cobranca_licenca(licenses, timestamptz) from public, anon, authenticated;
+
 -- A licença é deste cliente? (pelo cliente_id ou, se ainda não ligada, pelo e-mail da conta)
 create or replace function eh_minha_licenca(lic licenses) returns boolean
 language sql stable security definer set search_path = public as $$
@@ -106,7 +115,7 @@ returns table (
 )
 language sql stable security definer set search_path = public as $$
   with l as (
-    select lic.*,
+    select lic.*, lic as lic_row,
       (select min(a.activated_at) from license_activations a where a.license_id = lic.id) as primeira_ativacao,
       exists (select 1 from premium_keys p where p.license_id = lic.id and not p.revoked) as tem_chave_premium,
       inicio_cobranca(lic) as cobranca_desde
@@ -135,8 +144,8 @@ language sql stable security definer set search_path = public as $$
          else 'ativa' end,
     c.trial_days,
     case when c.teste then c.expires_at end,
-    case when c.teste or c.vencida or c.cancelada or c.cobranca_desde is null then null
-         else proxima_data_cobranca(c.cobranca_desde) end,
+    case when c.teste or c.vencida or c.cancelada then null
+         else proxima_cobranca_licenca(c.lic_row, c.cobranca_desde) end,
     case when not c.teste and not c.cancelada and c.downgrade_at > now() then c.downgrade_at end,
     c.primeira_ativacao is not null,
     case when c.cancelada then c.cancelada_ate end,
@@ -163,7 +172,7 @@ begin
   if lic.trial_days is not null or (lic.expires_at is not null and lic.expires_at < now())
      or (lic.cancelada_ate is not null and lic.cancelada_ate > now()) then raise exception 'nao_pode_cancelar'; end if;
   ini := inicio_cobranca(lic);
-  fim := case when ini is null then now() else proxima_data_cobranca(ini) end;
+  fim := coalesce(proxima_cobranca_licenca(lic, ini), now());
   if lic.expires_at is not null and lic.expires_at < fim then fim := lic.expires_at; end if;
   update licenses set cancelada_em = now(), cancelada_ate = fim,
          expira_antes_do_cancelamento = lic.expires_at, expires_at = fim

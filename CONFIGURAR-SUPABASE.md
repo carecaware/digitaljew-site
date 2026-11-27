@@ -96,6 +96,27 @@ Pelo terminal, com o Supabase CLI, os itens 2.2 a 2.4 são:
   Sem esses segredos, o cadastro funciona normalmente, só não envia o e-mail de boas-vindas.
   Pré-visualização do e-mail: `supabase/emails/boas-vindas.html`.
 
+## 3c. Pagamentos pela Asaas (Pix e cartão)
+
+Ambiente de **testes** (sandbox) ligado e testado em 27/11/2026. Para cobrar de verdade, siga o 3c.5.
+
+- [x] **3c.1** Conta de testes em sandbox.asaas.com, aprovada, com chave Pix cadastrada.
+- [x] **3c.2** Segredo `ASAAS_API_KEY` (chave de API da Asaas) em *Edge Functions → Secrets*. Chave de testes
+  (tem `_hmlg_`) usa o sandbox; chave de produção usa a API de verdade, sem mudar nada no código.
+- [x] **3c.3** `pagamentos.sql` (site) — preços, pedidos, assinatura única por cliente, faturas (rode depois do 1.5 e 1.7)
+  https://github.com/carecaware/digitaljew-site/blob/pagina-cadastro/supabase/pagamentos.sql
+- [x] **3c.4** Funções `pagamentos` (com verificação de login) e `asaas-webhook` (sem verificação de JWT;
+  confere o token `ASAAS_WEBHOOK_TOKEN`). Webhook cadastrado na Asaas de testes apontando para
+  `…/functions/v1/asaas-webhook`.
+- [ ] **3c.5 Ir para produção (quando for vender):**
+  1. Na conta **real** da Asaas: cadastrar uma chave Pix e gerar uma chave de API.
+  2. Trocar o segredo `ASAAS_API_KEY` no Supabase pela chave de produção.
+  3. Cadastrar o webhook na conta real (o Claude faz pela API) e o mesmo token em `ASAAS_WEBHOOK_TOKEN`.
+  4. Preços cobrados: tabela `precos` no Supabase (o `config.js` do site é só reserva).
+- Regras: 1ª compra paga o mês na hora; depois, fatura única no mesmo dia (29–31 → 28); compras no meio do
+  mês pagam só os dias até o vencimento (abaixo de R$ 5,00, cortesia); licença paga vale até o vencimento
+  + 3 dias; mensalidade paga renova sozinha; cancelar tira o item da fatura (sem itens, a assinatura sai da Asaas).
+
 ## 4. Dados
 
 - [ ] **4.1** Ligar as licenças que já existem aos clientes. Automático quando o `customer_contact`
